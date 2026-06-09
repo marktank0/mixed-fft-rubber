@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May  7 03:40:50 2021
+
+@author: WANG Mingchuan
+"""
+
+import numpy as np
+from fg.mxfft import *
+import time
+#
+subs = ["1/"] #,"2/","3/"]
+for sub in subs:
+    path = "foam2/" + sub
+#   
+    print(path)
+    t1 = time.time()
+    prob = FFTSolver(path,N=63)
+    #
+    incre_list=[1.0]
+    prob.calculate(incre_list=incre_list,savemodel="both")
+    t2 = time.time()
+    print("finish!")
+    print(t2-t1)
