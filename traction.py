@@ -9,17 +9,16 @@ import numpy as np
 from fg.mxfft import *
 import time
 #
-subs = ["1/"] #,"2/","3/","4/","5/","6/"]
+subs = ["2/"] #,"2/","3/","4/","5/","6/"]
 for sub in subs:
     path = "own_charge/" + sub
 #   
     print(path)
     t1 = time.time()
-    prob = FFTSolver(path,N=63, charge_path=None)
+    prob = FFTSolver(path,N=31, charge_path=None)
     #
-    incre_list=[1.0]
+    incre_list=[0.5, 0.5]
     prob.calculate(incre_list=incre_list,savemodel="normal")
     t2 = time.time()
     print("finish!")
     print(t2-t1)
-    

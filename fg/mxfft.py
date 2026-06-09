@@ -78,13 +78,46 @@ def load_umat(module_path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.umat
+
+
+def load_phase(path, N, phase_path=None, phase_key="phase"):
+    if phase_path is None:
+        npz_files = [
+            os.path.join(path, name)
+            for name in os.listdir(path)
+            if name.lower().endswith(".npz")
+        ]
+        phase_txt = os.path.join(path, "phase.txt")
+        if len(npz_files) == 1:
+            phase_path = npz_files[0]
+        elif os.path.exists(phase_txt):
+            phase_path = phase_txt
+        elif len(npz_files) > 1:
+            raise ValueError("Multiple .npz files found in {}; pass phase_path explicitly".format(path))
+        else:
+            raise FileNotFoundError("No phase .npz file or phase.txt found in {}".format(path))
+
+    if phase_path.lower().endswith(".npz"):
+        with np.load(phase_path, allow_pickle=False) as data:
+            if phase_key not in data.files:
+                raise KeyError("Missing phase key '{}' in {}".format(phase_key, phase_path))
+            phase = np.array(data[phase_key], dtype=float, copy=True)
+    else:
+        phase = np.loadtxt(phase_path)
+
+    if phase.ndim == 1:
+        phase = phase.reshape([N,N,N])
+    elif phase.shape != (N,N,N):
+        raise ValueError("Phase shape {} does not match N={} for {}".format(phase.shape, N, phase_path))
+
+    return phase.astype(float, copy=False), phase_path
 #---------------------------------------------------------
     
     
     
 class FFTSolver:
     """  """
-    def __init__(self, path, charge_path = None, N = 31):
+    def __init__(self, path, charge_path = None, N = 31, phase_path = None, phase_key = "phase"):
         """ """
         if charge_path == None:
             default_charge_path = os.path.join(path, "charge.txt")
@@ -93,9 +126,7 @@ class FFTSolver:
             self.pb = Problem(charge_path)
         self.path = path
         #
-        phasefile = os.path.join(path, "phase.txt")
-        phase = np.loadtxt(phasefile)
-        self.phase = phase.reshape([N,N,N])
+        self.phase, self.phase_path = load_phase(path, N, phase_path, phase_key)
         self.N = N
         #
         self.iter_num = 0
@@ -114,6 +145,17 @@ class FFTSolver:
     #
     def __counter(self,dX):
         self.iter_num += 1
+
+    def __progress_counter(self, matvec, rhs, label="cg", interval=10):
+        rhs_norm = max(np.linalg.norm(rhs), 1.0)
+
+        def callback(xk):
+            self.iter_num += 1
+            if self.iter_num % interval == 0:
+                residual = np.linalg.norm(rhs - matvec(xk))/rhs_norm
+                print("{} iter {} linear residual {:.3e}".format(label, self.iter_num, residual))
+
+        return callback
     
     def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[]):
         """ """
@@ -276,10 +318,11 @@ class FFTSolver:
             #print("iteration begins...")
             while iiter < 100:
                 self.iter_num = 0
+                cg_callback = self.__progress_counter(KdX, b, label="cg")
                 #begin the iteration
                 dX,flag = sp.cg(rtol=1.e-8, atol=0.0,
                   A = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float'),
-                  b = b, callback=self.__counter,
+                  b = b, callback=cg_callback,
                 )                                        # solve linear system using CG
                 #print(flag)
                 if flag > 0:

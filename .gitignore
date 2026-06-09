@@ -33,5 +33,4 @@ Thumbs.db
 *.vti
 *.vtk
 *.vtu
-*.npz
 *.npy
