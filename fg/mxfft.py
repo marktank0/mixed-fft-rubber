@@ -111,6 +111,29 @@ def load_phase(path, N, phase_path=None, phase_key="phase"):
         raise ValueError("Phase shape {} does not match N={} for {}".format(phase.shape, N, phase_path))
 
     return phase.astype(float, copy=False), phase_path
+
+
+def format_scientific_cut(value, decimals=2):
+    if not np.isfinite(value):
+        return str(value)
+    if value == 0.0:
+        return "0.00e+00"
+
+    sign = "-" if value < 0.0 else ""
+    value_abs = abs(value)
+    exponent = int(np.floor(np.log10(value_abs)))
+    mantissa = value_abs/(10.0**exponent)
+    factor = 10.0**decimals
+    mantissa = np.floor(mantissa*factor)/factor
+    return "{}{:.{}f}e{:+03d}".format(sign, mantissa, decimals, exponent)
+
+
+def save_output_csv(path, output, header):
+    outfile = os.path.join(path, "output.csv")
+    with open(outfile, "w", newline="") as file:
+        file.write(header + "\n")
+        for row in output:
+            file.write(",".join(format_scientific_cut(value) for value in row) + "\n")
 #---------------------------------------------------------
     
     
@@ -320,10 +343,10 @@ class FFTSolver:
                 self.iter_num = 0
                 cg_callback = self.__progress_counter(KdX, b, label="cg")
                 #begin the iteration
-                dX,flag = sp.cg(rtol=1.e-8, atol=0.0,
+                dX,flag = sp.cg(rtol=1.e-6, atol=1.e-10,
                   A = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float'),
                   b = b, callback=cg_callback,
-                )                                        # solve linear system using CG
+                )                                        # solve linear system using CG     #!!!!!!!!!!!!!!! Adjusted rtol from 1.e-8 to 1.e-6, atol from 0.0 to 1.e-10
                 #print(flag)
                 if flag > 0:
                     break
@@ -357,7 +380,7 @@ class FFTSolver:
         if savemodel == "normal" or savemodel == "both":
             #save Fs and Ps
             self.__save_F_P(self.path)
-            print("F and P are saved")
+            print("F and P are saved to output.csv")
     #=============================================================================
     
     def __save_F_P(self,path):
@@ -374,13 +397,12 @@ class FFTSolver:
             Fs[i,:] = Fvec
             Ps[i,:] = Pvec
         #
-        Ffile = os.path.join(path, "F.txt")
-        #Ffile = path + "F.txt"
-        np.savetxt(Ffile, Fs)
-        #
-        Pfile = os.path.join(path, "P.txt")
-        #Pfile = path + "P.txt"
-        np.savetxt(Pfile, Ps)
+        output = np.hstack((Fs, Ps))
+        header = ",".join([
+            "F11","F12","F13","F21","F22","F23","F31","F32","F33",
+            "P11","P12","P13","P21","P22","P23","P31","P32","P33",
+        ])
+        save_output_csv(path, output, header)
         
         
                 
