@@ -17,6 +17,11 @@ import itertools
 import importlib.util
 import os
 
+from fg.preconditioning import (
+    apply_standard_reference_preconditioner,
+    build_standard_reference_symbol,
+)
+
 
 class Problem:
     """ problem definitions """
@@ -135,6 +140,8 @@ def save_output_csv(path, output, header):
         file.write(header + "\n")
         for row in output:
             file.write(",".join(format_scientific_cut(value) for value in row) + "\n")
+
+
 #---------------------------------------------------------
     
     
@@ -178,8 +185,11 @@ class FFTSolver:
 
         return callback
     
-    def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[]):
+    def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[], preconditioner=None):
         """ """
+        #
+        if preconditioner not in (None, "none", "reference"):
+            raise ValueError("Unknown preconditioner {!r}; use None or 'reference'.".format(preconditioner))
         #
         ndim = 3
         N = self.N
@@ -296,10 +306,22 @@ class FFTSolver:
             while iiter < 100:
                 self.iter_num = 0
                 cg_callback = self.__progress_counter(G_K_dF, b, label="cg")
+                Aop = sp.LinearOperator(shape=(F.size,F.size),matvec=G_K_dF,dtype='float')
+                Mop = None
+                if preconditioner == "reference":
+                    K_ref = np.mean(K4, axis=(4,5,6))
+                    zero_mode_free = [3*i + j for i,j in self.pb.stress_control]
+                    inv_symbol = build_standard_reference_symbol(
+                        Ghat4, K_ref, zero_mode_free_components=zero_mode_free
+                    )
+                    Mop = sp.LinearOperator(
+                        shape=(F.size,F.size),
+                        matvec=lambda vec: apply_standard_reference_preconditioner(vec, inv_symbol),
+                        dtype='float',
+                    )
                 #begin the iteration
                 dFm,flag = sp.cg(rtol=1.e-8, atol=0.0,
-                  A = sp.LinearOperator(shape=(F.size,F.size),matvec=G_K_dF,dtype='float'),
-                  b = b, callback=cg_callback, maxiter = 1000, 
+                  A = Aop, b = b, M = Mop, callback=cg_callback, maxiter = 1000, 
                 )                                        # solve linear system using CG
                 #print(flag)
                 if flag > 0:

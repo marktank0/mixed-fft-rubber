@@ -19,6 +19,11 @@ import itertools
 import importlib.util
 import os
 
+from fg.preconditioning import (
+    apply_mixed_reference_preconditioner,
+    build_mixed_reference_symbol,
+)
+
 class Problem:
     """ problem definitions """
     def __init__(self, path):
@@ -134,6 +139,8 @@ def save_output_csv(path, output, header):
         file.write(header + "\n")
         for row in output:
             file.write(",".join(format_scientific_cut(value) for value in row) + "\n")
+
+
 #---------------------------------------------------------
     
     
@@ -179,9 +186,20 @@ class FFTSolver:
                 print("{} iter {} linear residual {:.3e}".format(label, self.iter_num, residual))
 
         return callback
+
+    def __gmres_progress_counter(self, label="gmres", interval=10):
+        def callback(residual):
+            self.iter_num += 1
+            if self.iter_num % interval == 0:
+                print("{} iter {} linear residual {:.3e}".format(label, self.iter_num, residual))
+
+        return callback
     
-    def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[]):
+    def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[], preconditioner=None):
         """ """
+        #
+        if preconditioner not in (None, "none", "reference"):
+            raise ValueError("Unknown preconditioner {!r}; use None or 'reference'.".format(preconditioner))
         #
         ndim = 3
         N = self.N
@@ -319,6 +337,7 @@ class FFTSolver:
             result = np.hstack((tmp1,tmp2))
             #
             return result
+
         #
         F = np.array(eyeMat,copy=True)
         YALI = np.zeros([N,N,N])
@@ -341,12 +360,32 @@ class FFTSolver:
             #print("iteration begins...")
             while iiter < 100:
                 self.iter_num = 0
-                cg_callback = self.__progress_counter(KdX, b, label="cg")
-                #begin the iteration
-                dX,flag = sp.cg(rtol=1.e-6, atol=1.e-10,
-                  A = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float'),
-                  b = b, callback=cg_callback,
-                )                                        # solve linear system using CG     #!!!!!!!!!!!!!!! Adjusted rtol from 1.e-8 to 1.e-6, atol from 0.0 to 1.e-10
+                Aop = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float')
+                Mop = None
+                if preconditioner == "reference":
+                    K_ref = np.mean(K4, axis=(4,5,6))
+                    J_ref = np.mean(JFmT, axis=(2,3,4))
+                    kappa_inv_ref = np.mean(Kappa_inv)
+                    zero_mode_free = [3*i + j for i,j in self.pb.stress_control] + [9]
+                    inv_symbol = build_mixed_reference_symbol(
+                        Ghat4, K_ref, J_ref, kappa_inv_ref,
+                        zero_mode_free_components=zero_mode_free,
+                    )
+                    Mop = sp.LinearOperator(
+                        shape=(num_tol,num_tol),
+                        matvec=lambda vec: apply_mixed_reference_preconditioner(vec, inv_symbol),
+                        dtype='float',
+                    )
+                    gmres_callback = self.__gmres_progress_counter(label="gmres")
+                    dX,flag = sp.gmres(rtol=1.e-6, atol=1.e-10,
+                      A = Aop, b = b, M = Mop, callback=gmres_callback,
+                      callback_type="pr_norm", restart=100, maxiter=1000,
+                    )
+                else:
+                    cg_callback = self.__progress_counter(KdX, b, label="cg")
+                    dX,flag = sp.cg(rtol=1.e-6, atol=1.e-10,
+                      A = Aop, b = b, callback=cg_callback,
+                    )                                        # solve linear system using CG     #!!!!!!!!!!!!!!! Adjusted rtol from 1.e-8 to 1.e-6, atol from 0.0 to 1.e-10
                 #print(flag)
                 if flag > 0:
                     break

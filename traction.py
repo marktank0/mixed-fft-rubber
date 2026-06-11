@@ -17,8 +17,8 @@ for sub in subs:
     t1 = time.time()
     prob = FFTSolver(path,N=31, charge_path=None)
     #
-    incre_list=[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-    prob.calculate(incre_list=incre_list,savemodel="normal")
+    incre_list=[0.125]*8
+    prob.calculate(incre_list=incre_list,savemodel="normal", preconditioner="reference")
     t2 = time.time()
     print("finish!")
     print(t2-t1)
