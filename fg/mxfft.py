@@ -195,11 +195,11 @@ class FFTSolver:
 
         return callback
     
-    def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[], preconditioner=None):
+    def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[], preconditioner=None, diagnostics=False):
         """ """
         #
-        if preconditioner not in (None, "none", "reference"):
-            raise ValueError("Unknown preconditioner {!r}; use None or 'reference'.".format(preconditioner))
+        if preconditioner not in (None, "none", "gmres", "reference"):
+            raise ValueError("Unknown preconditioner {!r}; use None, 'gmres', or 'reference'.".format(preconditioner))
         #
         ndim = 3
         N = self.N
@@ -338,6 +338,29 @@ class FFTSolver:
             #
             return result
 
+        def print_linear_diagnostics(dX, Mop):
+            """Print original-system and preconditioned linear residuals."""
+            residual = b - KdX(dX)
+            rhs_norm = max(np.linalg.norm(b), 1.0)
+            true_total = np.linalg.norm(residual)/rhs_norm
+            true_F = np.linalg.norm(residual[0:num_up])/max(np.linalg.norm(b[0:num_up]), 1.0)
+            true_p = np.linalg.norm(residual[num_up:num_tol])/max(np.linalg.norm(b[num_up:num_tol]), 1.0)
+            print(
+                "linear true residual total {:.3e} F-block {:.3e} p-block {:.3e}"
+                .format(true_total, true_F, true_p)
+            )
+
+            if Mop is not None:
+                prec_residual = Mop.matvec(residual)
+                prec_rhs = Mop.matvec(b)
+                prec_total = np.linalg.norm(prec_residual)/max(np.linalg.norm(prec_rhs), 1.0)
+                prec_F = np.linalg.norm(prec_residual[0:num_up])/max(np.linalg.norm(prec_rhs[0:num_up]), 1.0)
+                prec_p = np.linalg.norm(prec_residual[num_up:num_tol])/max(np.linalg.norm(prec_rhs[num_up:num_tol]), 1.0)
+                print(
+                    "linear preconditioned residual total {:.3e} F-block {:.3e} p-block {:.3e}"
+                    .format(prec_total, prec_F, prec_p)
+                )
+
         #
         F = np.array(eyeMat,copy=True)
         YALI = np.zeros([N,N,N])
@@ -376,6 +399,7 @@ class FFTSolver:
                         matvec=lambda vec: apply_mixed_reference_preconditioner(vec, inv_symbol),
                         dtype='float',
                     )
+                if preconditioner in ("gmres", "reference"):
                     gmres_callback = self.__gmres_progress_counter(label="gmres")
                     dX,flag = sp.gmres(rtol=1.e-6, atol=1.e-10,
                       A = Aop, b = b, M = Mop, callback=gmres_callback,
@@ -387,6 +411,8 @@ class FFTSolver:
                       A = Aop, b = b, callback=cg_callback,
                     )                                        # solve linear system using CG     #!!!!!!!!!!!!!!! Adjusted rtol from 1.e-8 to 1.e-6, atol from 0.0 to 1.e-10
                 #print(flag)
+                if diagnostics:
+                    print_linear_diagnostics(dX, Mop)
                 if flag > 0:
                     break
                 dFm, dYL = np.split(dX, [num_up])
@@ -396,7 +422,7 @@ class FFTSolver:
                 b     = calb(F,P,YALI,Kappa_inv,TbarP)
                 #
                 print("res {:.3e} iter times {}".format(np.linalg.norm(dFm)/Fn, self.iter_num))
-                if np.linalg.norm(dFm)/Fn<1.e-5 and iiter>0: break # check convergence
+                if np.linalg.norm(dFm)/Fn<5.e-5 and iiter>0: break # check convergence
                 iiter += 1
             #
             t2 = time.time()

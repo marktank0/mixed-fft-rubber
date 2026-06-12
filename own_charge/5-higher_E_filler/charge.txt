@@ -1,0 +1,7 @@
+#first two lines: model:---0)model num 1) p1.. 2)p2...
+1.0	10	0.46	0.0	0.0	0.0	0.0	0.0	0.0
+1.0	500	0.30	0.0	0.0	0.0	0.0	0.0	0.0
+#charge dF
+0.4	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+#(Charge type) P-1 or F-0: 0 = control this component by Fij, 1 = control this component by average Pij
+0.0	0.0	0.0	0.0	1.0	0.0	0.0	0.0	1.0

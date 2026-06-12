@@ -171,6 +171,7 @@ For that reason:
 - `preconditioner="reference"` must be requested explicitly,
 - the standard solver applies the reference preconditioner through SciPy CG,
 - the mixed solver applies the reference preconditioner through SciPy GMRES because the pressure block makes the reference system indefinite,
+- the mixed solver also accepts `preconditioner="gmres"` as a diagnostic mode: GMRES without the Green/reference preconditioner,
 - the implementation uses pseudo-inverses and should be treated as experimental,
 - results should always be compared against `preconditioner=None`.
 
@@ -190,7 +191,13 @@ For the mixed solver, the corresponding explicit reference-preconditioned path i
 sp.gmres(A=Aop, M=Mop, b=b, ...)
 ```
 
-The default mixed path is unchanged and still uses CG with no preconditioner. The preconditioner is assembled once per Newton iteration from the current averaged tangent fields and then applied inside every Krylov iteration.
+For comparison testing, the mixed solver also allows:
+
+```python
+sp.gmres(A=Aop, M=None, b=b, ...)
+```
+
+through `preconditioner="gmres"`. The default mixed path is unchanged and still uses CG with no preconditioner. The Green/reference preconditioner is assembled once per Newton iteration from the current averaged tangent fields and then applied inside every GMRES iteration when `preconditioner="reference"` is used.
 
 For the standard solver:
 
