@@ -19,6 +19,12 @@ import itertools
 import importlib.util
 import os
 
+from fg.io_paths import (
+    default_charge_path,
+    ensure_output_path,
+    output_run_path,
+    phase_source,
+)
 from fg.preconditioning import (
     apply_mixed_reference_preconditioner,
     build_mixed_reference_symbol,
@@ -134,6 +140,7 @@ def format_scientific_cut(value, decimals=2):
 
 
 def save_output_csv(path, output, header):
+    ensure_output_path(path)
     outfile = os.path.join(path, "output.csv")
     with open(outfile, "w", newline="") as file:
         file.write(header + "\n")
@@ -147,16 +154,16 @@ def save_output_csv(path, output, header):
     
 class FFTSolver:
     """  """
-    def __init__(self, path, charge_path = None, N = 31, phase_path = None, phase_key = "phase"):
+    def __init__(self, structure_path, charge_path = None, output_path = None, N = 31, phase_path = None, phase_key = "phase"):
         """ """
-        if charge_path == None:
-            default_charge_path = os.path.join(path, "charge.txt")
-            self.pb = Problem(default_charge_path)
-        else:
-            self.pb = Problem(charge_path)
-        self.path = path
+        self.structure_path = structure_path
+        self.charge_path = charge_path or default_charge_path(structure_path)
+        self.output_path = ensure_output_path(output_run_path(structure_path, output_path))
+        self.path = self.output_path
+        self.pb = Problem(self.charge_path)
         #
-        self.phase, self.phase_path = load_phase(path, N, phase_path, phase_key)
+        phase_dir, selected_phase_path = phase_source(structure_path, phase_path)
+        self.phase, self.phase_path = load_phase(phase_dir, N, selected_phase_path, phase_key)
         self.N = N
         #
         self.iter_num = 0
