@@ -1,9 +1,9 @@
-Created: 2026-06-15T13:32:59
-Run time seconds: 656.743
+Created: 2026-06-15T13:45:51
+Run time seconds: 765.910
 
 Input files
 -----------
-Structure path: 3D_samples/voxels\2_voxel.npz
+Structure path: 3D_samples/voxels\5_voxel.npz
 Charge path: 3D_samples/Charges/Strain_1.0_E10x.txt
 
 Material phases
@@ -14,9 +14,9 @@ Phase 1 (filler): model 1, E 100.0, poisson 0.3
 Structure statistics
 --------------------
 Filler phase: 1
-Filler voxels: 1927
+Filler voxels: 2063
 Total voxels: 29791
-Filler volume fraction: 0.064684
+Filler volume fraction: 0.069249
 
 Solver settings
 ---------------

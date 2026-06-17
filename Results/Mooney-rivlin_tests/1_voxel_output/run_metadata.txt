@@ -1,22 +1,22 @@
-Created: 2026-06-15T13:32:59
-Run time seconds: 656.743
+Created: 2026-06-16T00:19:53
+Run time seconds: 1488.815
 
 Input files
 -----------
-Structure path: 3D_samples/voxels\2_voxel.npz
-Charge path: 3D_samples/Charges/Strain_1.0_E10x.txt
+Structure path: C:/Coding/mixed-fft-master/3D_samples/voxels/1_voxel.npz
+Charge path: 3D_samples\Charges\Mooney_1.0_E10x.txt
 
 Material phases
 ---------------
-Phase 0 (matrix): model 1, E 5.0, poisson 0.46
-Phase 1 (filler): model 1, E 100.0, poisson 0.3
+Phase 0 (matrix): model 2, E 10.0, poisson 0.46
+Phase 1 (filler): model 2, E 100.0, poisson 0.3
 
 Structure statistics
 --------------------
 Filler phase: 1
-Filler voxels: 1927
+Filler voxels: 2649
 Total voxels: 29791
-Filler volume fraction: 0.064684
+Filler volume fraction: 0.088919
 
 Solver settings
 ---------------

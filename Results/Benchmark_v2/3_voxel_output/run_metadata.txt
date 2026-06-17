@@ -1,5 +1,5 @@
-Created: 2026-06-15T13:12:00
-Run time seconds: 491.758
+Created: 2026-06-15T13:33:04
+Run time seconds: 661.948
 
 Input files
 -----------
@@ -8,7 +8,7 @@ Charge path: 3D_samples/Charges/Strain_1.0_E10x.txt
 
 Material phases
 ---------------
-Phase 0 (matrix): model 1, E 10.0, poisson 0.46
+Phase 0 (matrix): model 1, E 5.0, poisson 0.46
 Phase 1 (filler): model 1, E 100.0, poisson 0.3
 
 Structure statistics

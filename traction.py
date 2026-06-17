@@ -5,11 +5,11 @@ from run_case import run_case
 
 
 CASE = {
-    "structure_path": "C:/Coding/mixed-fft-master/3D_samples/voxels/1_voxel.npz",
-    "charge_path": "3D_samples/Charges/Strain_1.0_E10x.txt",
-    "output_path": "Results/Benchmark_v1",
+    "structure_path": r"C:/Coding/mixed-fft-master/3D_samples/voxels/1_voxel.npz",
+    "charge_path": r"3D_samples\Charges\Neo_1.0_E10x.txt",
+    "output_path": r"Results",
     "N": 31,
-    "incre_list": [0.1]*10,
+    "incre_list": [0.05]*20,
     "preconditioner": "reference",
     "diagnostics": False,
     "save_plots": True,
