@@ -28,6 +28,8 @@ def _run_case_impl(case):
     plot_dpi = _case_value(case, "plot_dpi", 200)
     matrix_phase = _case_value(case, "matrix_phase", 0)
     filler_phase = _case_value(case, "filler_phase", 1)
+    save_fields = _case_value(case, "save_fields", False)
+    field_filename = _case_value(case, "field_filename", "fields.vti")
 
     print(structure_path)
     start_time = time.time()
@@ -43,6 +45,8 @@ def _run_case_impl(case):
         savemodel=savemodel,
         preconditioner=preconditioner,
         diagnostics=diagnostics,
+        save_fields=save_fields,
+        field_filename=field_filename,
     )
     solve_time = time.time() - start_time
 

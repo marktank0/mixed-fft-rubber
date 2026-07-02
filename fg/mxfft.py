@@ -29,6 +29,7 @@ from fg.preconditioning import (
     apply_mixed_reference_preconditioner,
     build_mixed_reference_symbol,
 )
+from fg.vtk_export import save_vti_cell_fields, solution_fields
 
 class Problem:
     """ problem definitions """
@@ -202,7 +203,18 @@ class FFTSolver:
 
         return callback
     
-    def calculate(self,increment = 10, incre_list=[], savemodel="no", give_Ghat=False, Ghat_given=[], preconditioner=None, diagnostics=False):
+    def calculate(
+        self,
+        increment = 10,
+        incre_list=[],
+        savemodel="no",
+        give_Ghat=False,
+        Ghat_given=[],
+        preconditioner=None,
+        diagnostics=False,
+        save_fields=False,
+        field_filename="fields.vti",
+    ):
         """ """
         #
         if preconditioner not in (None, "none", "gmres", "reference"):
@@ -453,6 +465,13 @@ class FFTSolver:
             #save Fs and Ps
             self.__save_F_P(self.path)
             print("F and P are saved to output.csv")
+        if save_fields:
+            field_file = save_vti_cell_fields(
+                self.path,
+                solution_fields(F, P, phase, pressure=YALI),
+                filename=field_filename,
+            )
+            print("local fields are saved to {}".format(field_file))
     #=============================================================================
     
     def __save_F_P(self,path):

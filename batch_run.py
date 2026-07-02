@@ -27,6 +27,8 @@ CASE_SETTINGS = {
     "preconditioner": "reference",
     "diagnostics": False,
     "save_plots": True,
+    "save_fields": False,
+    "field_filename": "fields.vti",
     "plot_dpi": 200,
     "matrix_phase": 0,
     "filler_phase": 1,
