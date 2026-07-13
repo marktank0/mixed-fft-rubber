@@ -14,6 +14,7 @@ Usage:
 
 import argparse
 import csv
+import json
 import os
 import re
 
@@ -32,6 +33,16 @@ _PHR_RE = re.compile(r"phr_(-?\d+(?:\.\d+)?)", re.IGNORECASE)
 def parse_phr(folder_name):
     match = _PHR_RE.search(folder_name)
     return float(match.group(1)) if match else None
+
+
+def solver_failed(folder):
+    """True if solver_stats.json marks this run as failed."""
+    stats_path = os.path.join(folder, "solver_stats.json")
+    if not os.path.isfile(stats_path):
+        return False
+    with open(stats_path) as file:
+        stats = json.load(file)
+    return stats.get("status") == "failed"
 
 
 def load_f11_p11(csv_path):
@@ -71,6 +82,9 @@ def collect(results_dir, strains):
     for name in folders:
         csv_path = os.path.join(results_dir, name, "output.csv")
         if not os.path.isfile(csv_path):
+            continue
+        if solver_failed(os.path.join(results_dir, name)):
+            print("skip (solver failed): {}".format(name))
             continue
         phr = parse_phr(name)
         if phr is None:

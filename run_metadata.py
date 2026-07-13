@@ -100,6 +100,7 @@ def write_run_metadata(
     filler_phase=1,
     plot_files=None,
     filename="run_metadata.txt",
+    solver_status=None,
 ):
     os.makedirs(output_path, exist_ok=True)
 
@@ -153,7 +154,10 @@ def write_run_metadata(
         file.write("Grid N: {}\n".format(N))
         file.write("Increments: [{}]\n".format(_format_list(incre_list)))
         file.write("Preconditioner: {}\n".format(preconditioner))
-        file.write("Diagnostics: {}\n\n".format(diagnostics))
+        file.write("Diagnostics: {}\n".format(diagnostics))
+        if solver_status is not None:
+            file.write("Solver status: {}\n".format(solver_status))
+        file.write("\n")
 
         file.write("Charge\n")
         file.write("------\n")
