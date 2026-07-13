@@ -82,11 +82,22 @@ class BooleanSpheroidalInclusionModel(BooleanModelBase):
         spheroid = pv.PolyData(points, sphere.faces)
         return spheroid
 
-    def create_particles(self, points):
-        """Create spheroidal particles at the given points."""
-        # Generate orientations and dimensions
-        _, orientations, dimensions = self.generate_points_and_dimensions()
-        
+    def create_particles(self, points, orientations=None, dimensions=None):
+        """Create spheroidal particles at the given points.
+
+        If ``orientations``/``dimensions`` are not supplied they are generated to
+        match ``points`` (one per point). Previously this method called
+        ``generate_points_and_dimensions()`` internally, which drew a *fresh*
+        Poisson number of points and then relied on ``zip`` truncation -- so the
+        particle count silently mismatched ``points`` and some centers received
+        no spheroid. Callers that later test containment against these meshes must
+        pass the same orientations/dimensions used to build them.
+        """
+        if orientations is None:
+            orientations = [Rotation.random() for _ in range(len(points))]
+        if dimensions is None:
+            dimensions = [self.generate_particle_dimensions() for _ in range(len(points))]
+
         # Create particles
         particles = []
         for center, rotation, dims in zip(points, orientations, dimensions):
@@ -128,12 +139,12 @@ class BooleanSpheroidalInclusionModel(BooleanModelBase):
         """
         # Generate points, orientations, and dimensions
         points, orientations, dimensions = self.generate_points_and_dimensions()
-        
+
         # Calculate porosity
         porosity = self.calculate_porosity(points)
-        
-        # Create particles
-        particles, points = self.create_particles(points)
+
+        # Create particles from the exact points/orientations/dimensions above
+        particles, points = self.create_particles(points, orientations, dimensions)
         
         # Create visualization
         plotter = self.visualize(particles)

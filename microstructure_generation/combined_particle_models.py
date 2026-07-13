@@ -17,18 +17,30 @@ from file_viewers.view_npz_3d import view_npz_file
 
 # Default run settings
 # Edit these values to change the defaults used by the CLI and helper functions.
-DEFAULT_FILENAME_BASE = "6"
-DEFAULT_SAVE_DIR = "microstructure_generation/3D_samples"
-DEFAULT_BOX_SIZE = 2.0
+DEFAULT_FILENAME_BASE = "seed_5"
+DEFAULT_SAVE_DIR = "microstructure_generation/3D_samples/occlusion_unfilled"
+DEFAULT_BOX_SIZE = 3.0
 
-DEFAULT_MODEL1_INTENSITY = 140.0
-DEFAULT_MODEL1_RADIUS = 0.15
-DEFAULT_MODEL2_INTENSITY = 1.25
-DEFAULT_MODEL2_MIN_R1 = 0.3
-DEFAULT_MODEL2_MAX_R1 = 0.6
-DEFAULT_MODEL3_INTENSITY = 1.5
-DEFAULT_MODEL3_RADIUS = 0.6
-DEFAULT_SEED = None
+'''
+Settings for seed 4 and 5
+DEFAULT_MODEL1_INTENSITY = 240.0
+DEFAULT_MODEL1_RADIUS = 0.10
+DEFAULT_MODEL2_INTENSITY = 2
+DEFAULT_MODEL2_MIN_R1 = 0.25
+DEFAULT_MODEL2_MAX_R1 = 0.5
+DEFAULT_MODEL3_INTENSITY = 1.8
+DEFAULT_MODEL3_RADIUS = 0.4
+DEFAULT_SEED = 5
+'''
+
+DEFAULT_MODEL1_INTENSITY = 240.0
+DEFAULT_MODEL1_RADIUS = 0.10
+DEFAULT_MODEL2_INTENSITY = 2
+DEFAULT_MODEL2_MIN_R1 = 0.25
+DEFAULT_MODEL2_MAX_R1 = 0.5
+DEFAULT_MODEL3_INTENSITY = 1.8
+DEFAULT_MODEL3_RADIUS = 0.4
+DEFAULT_SEED = 5
 
 DEFAULT_SAVE_PARTICLE_VTP = False
 DEFAULT_SAVE_UNION_VTP = False
@@ -42,7 +54,7 @@ DEFAULT_FILLER_DENSITY = 1.8
 DEFAULT_RUBBER_DENSITY = 0.92
 # VOXEL_COARSENESS = 17 # the courseness of the voxel grid per 1 unit of box size
 # DEFAULT_VOXEL_GRID_SHAPE = (VOXEL_COARSENESS*DEFAULT_BOX_SIZE, VOXEL_COARSENESS*DEFAULT_BOX_SIZE, VOXEL_COARSENESS*DEFAULT_BOX_SIZE)
-DEFAULT_VOXEL_GRID_SHAPE = (31, 31, 31)
+DEFAULT_VOXEL_GRID_SHAPE = (63, 63, 63)
 DEFAULT_NOTES = ""
 
 DEFAULT_VISUALIZE = True
@@ -72,71 +84,63 @@ def create_union_of_bodies(bodies):
         combined = combined.merge(body)
     return combined.triangulate()
 
-def check_points_inside_mesh(points, mesh):
-    """
-    Check which points are inside a mesh.
-    
-    Args:
-        points (np.ndarray): Array of points to check
-        mesh (pv.PolyData): The mesh to check against
-        
-    Returns:
-        list: Indices of points that are inside the mesh
-    """
-    # Create a point cloud from the points
-    point_cloud = pv.PolyData(points)
-    
-    # Use PyVista's select_enclosed_points method
-    selection = point_cloud.select_enclosed_points(mesh, tolerance=0.0)
-    
-    # Get the "SelectedPoints" array which contains 1 for inside, 0 for outside
-    mask = selection["SelectedPoints"].astype(bool)
-    
-    # Get indices where mask is True
-    inside_indices = np.where(mask)[0]
-    
-    return inside_indices.tolist()
+def points_inside_spheres(points, centers, radius):
+    """Boolean mask marking points inside ANY sphere of the given radius.
 
-def check_points_inside_mesh_alternative(points, mesh):
-    """
-    Alternative implementation to check which points are inside a mesh.
-    Uses a simple ray casting approach.
-    
+    Uses the exact analytic test (center-to-center distance <= radius). Unlike
+    mesh ray-casting, this is unaffected by how many particles overlap a point --
+    a point is "inside" as long as at least one sphere contains it. This is what
+    fixes the failure where a cube fully covered by overlapping particle-3 spheres
+    still left particle-1 spheres in the output.
+
     Args:
-        points (np.ndarray): Array of points to check
-        mesh (pv.PolyData): The mesh to check against
-        
+        points (np.ndarray): (N, 3) query points (particle-1 centers).
+        centers (np.ndarray): (M, 3) sphere centers.
+        radius (float): Common sphere radius.
+
     Returns:
-        list: Indices of points that are inside the mesh
+        np.ndarray: Boolean mask of shape (N,), True where the point is inside.
     """
-    inside_indices = []
-    
-    # Get the bounds of the mesh
-    bounds = mesh.bounds
-    x_range = [bounds[0], bounds[1]]
-    y_range = [bounds[2], bounds[3]]
-    z_range = [bounds[4], bounds[5]]
-    
-    # First, do a simple bounding box check
-    for i, point in enumerate(points):
-        x, y, z = point
-        # Check if point is inside the bounding box
-        if (x_range[0] <= x <= x_range[1] and 
-            y_range[0] <= y <= y_range[1] and 
-            z_range[0] <= z <= z_range[1]):
-            
-            # Create a ray from the point to outside the mesh
-            far_point = np.array([x_range[1] + 100, y, z])
-            ray = pv.Line(point, far_point)
-            
-            # Get intersections of the ray with the mesh
-            intersections = mesh.ray_trace(ray.points[0], ray.points[1])
-            
-            # If the number of intersections is odd, the point is inside
-            if len(intersections[0]) % 2 == 1:
-                inside_indices.append(i)
-    
-    return inside_indices
+    points = np.asarray(points, dtype=float)
+    inside = np.zeros(points.shape[0], dtype=bool)
+    if points.shape[0] == 0:
+        return inside
+    r_sq = float(radius) * float(radius)
+    for center in np.asarray(centers, dtype=float):
+        rel = points - center
+        inside |= np.einsum("ij,ij->i", rel, rel) <= r_sq
+    return inside
+
+
+def points_inside_spheroids(points, centers, orientations, dimensions):
+    """Boolean mask marking points inside ANY spheroid.
+
+    Each point is transformed into the spheroid's local (unrotated) frame and
+    tested against the unit sphere after dividing by the spheroid radii. This is
+    the exact analytic containment test and, like ``points_inside_spheres``, is
+    immune to particle overlap.
+
+    Args:
+        points (np.ndarray): (N, 3) query points (particle-1 centers).
+        centers (np.ndarray): (M, 3) spheroid centers.
+        orientations (list): M scipy ``Rotation`` objects (local -> world), the
+            same ones used to build the spheroid meshes.
+        dimensions (list): M tuples ``(R1, R2, R3)`` of spheroid radii.
+
+    Returns:
+        np.ndarray: Boolean mask of shape (N,), True where the point is inside.
+    """
+    points = np.asarray(points, dtype=float)
+    inside = np.zeros(points.shape[0], dtype=bool)
+    if points.shape[0] == 0:
+        return inside
+    for center, rotation, dims in zip(centers, orientations, dimensions):
+        rot_matrix = rotation.as_matrix()  # local -> world; its transpose maps world -> local
+        rel = points - np.asarray(center, dtype=float)
+        local = rel @ rot_matrix  # equals (rot_matrix.T @ rel_i) per row
+        scaled = local / np.asarray(dims, dtype=float)
+        inside |= np.einsum("ij,ij->i", scaled, scaled) <= 1.0
+    return inside
 
 
 def _resolve_save_dir(save_dir):
@@ -707,31 +711,36 @@ def generate_and_save(
     # First generate only the points for model1 (no particles yet)
     model1_points = model1.generate_points()
 
-    # Generate full structures for model2 and model3 since we need their unions
-    model2_points, model2_particles, _, _ = model2.generate_structure(show_plot=False)
-    model3_points, model3_particles, _, _ = model3.generate_structure(show_plot=False)
+    # Generate model2 (spheroids) keeping the exact centers/orientations/dimensions
+    # so containment is tested against the true particle volumes, and the meshes
+    # (if built for visualization) match those same parameters.
+    model2_points, model2_orientations, model2_dimensions = model2.generate_points_and_dimensions()
+    model2_particles, _ = model2.create_particles(
+        model2_points, model2_orientations, model2_dimensions
+    )
 
-    # Create union of model2 and model3 particles
-    union2 = create_union_of_bodies(model2_particles)
-    union3 = create_union_of_bodies(model3_particles)
+    # Model3 spheres have a constant radius; keep their centers for the analytic test.
+    model3_points = model3.generate_points()
+    model3_particles, _ = model3.create_particles(model3_points)
 
-    # Try the first method, if it fails, use the alternative
-    try:
-        # Check which model1 points are inside union2 mesh
-        inside_union2_indices = check_points_inside_mesh(model1_points, union2)
-        # Check which model1 points are inside union3 mesh
-        inside_union3_indices = check_points_inside_mesh(model1_points, union3)
-    except Exception as e:
-        if verbose:
-            print(f"Primary inside-check failed ({e}); using fallback method.")
-        inside_union2_indices = check_points_inside_mesh_alternative(model1_points, union2)
-        inside_union3_indices = check_points_inside_mesh_alternative(model1_points, union3)
-
-    # Get indices of points that are inside union2 but outside union3
-    final_indices = set(inside_union2_indices) - set(inside_union3_indices)
+    # Keep only model1 centers that lie inside the volume of at least one model2
+    # particle AND outside every model3 particle. These analytic tests use the
+    # particle centers themselves (not a merged mesh), so they are exact and are
+    # not fooled by overlapping particles -- covering the box with model3 spheres
+    # now correctly removes all model1 spheres in that region.
+    inside_model2 = points_inside_spheroids(
+        model1_points, model2_points, model2_orientations, model2_dimensions
+    )
+    inside_model3 = points_inside_spheres(model1_points, model3_points, model3.radius)
+    final_mask = inside_model2 & ~inside_model3
 
     # Get the filtered points
-    filtered_points = model1_points[list(final_indices)]
+    filtered_points = model1_points[final_mask]
+
+    # Union meshes are only needed for optional visualization / .vtp export.
+    need_union_meshes = return_meshes or outputs.get("save_union_vtp", DEFAULT_SAVE_UNION_VTP)
+    union2 = create_union_of_bodies(model2_particles) if need_union_meshes else None
+    union3 = create_union_of_bodies(model3_particles) if need_union_meshes else None
 
     # Only now create particles for the filtered points
     final_particles, _ = model1.create_particles(filtered_points)

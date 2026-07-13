@@ -454,7 +454,7 @@ def view_npz_file(
 	max_points=120000,
 	point_size=2.0,
 	sphere_resolution=16,
-	voxel_alpha=0.95,
+	voxel_alpha=1.00,
 	seed=0,
 	zoom=1.0,
 	save=None,
