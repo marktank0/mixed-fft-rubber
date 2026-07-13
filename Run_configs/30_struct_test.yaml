@@ -1,17 +1,17 @@
 version: 1
-base_path: .
+base_path: /home/jovyan/mixed-fft-rubber/
 
 experiment:
-  name: benchmark_v3
-  output_root: Results/Benchmark_v3
+  name: 30_struct_test_run
+  output_root: Results/30_struct_test_run
 
 run:
-  mode: cases # cases | batch
+  mode: batch # cases | batch
 
 execution:
-  max_workers: 2
+  max_workers: 30
   log_to_file: true
-  on_existing: error # skip | overwrite | error
+  on_existing: skip # skip | overwrite | error
   save_resolved_config: true
   thread_env:
     OMP_NUM_THREADS: 1
@@ -24,8 +24,8 @@ defaults:
     type: mixed
     N: 31
     increments:
-      repeat: 2
-      value: 0.5
+      repeat: 10
+      value: 0.1
     preconditioner: reference
     diagnostics: false
     savemodel: normal
@@ -46,7 +46,7 @@ defaults:
 
 batch:
   structures:
-    glob: 3D_samples/voxels/*.npz
+    glob: microstructure_generation/3D_samples/test/voxel_structures/*.npz
     sort: name
     include: ["*_voxel.npz"]
     exclude: ["test_*"]
