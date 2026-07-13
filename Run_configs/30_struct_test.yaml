@@ -3,7 +3,7 @@ base_path: /home/jovyan/mixed-fft-rubber/
 
 experiment:
   name: 30_struct_test_run
-  output_root: Results/30_struct_test_run
+  output_root: Results/30_struct_test_run_v3
 
 run:
   mode: batch # cases | batch
@@ -24,8 +24,8 @@ defaults:
     type: mixed
     N: 31
     increments:
-      repeat: 10
-      value: 0.1
+      repeat: 40
+      value: 0.025
     preconditioner: reference
     diagnostics: false
     savemodel: normal
