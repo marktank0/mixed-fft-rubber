@@ -1,0 +1,32 @@
+Created: 2026-07-13T10:18:44
+Run time seconds: 69.172
+
+Input files
+-----------
+Structure path: C:\Coding\mixed-fft-master\3D_samples\voxels\1_voxel.npz
+Charge path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+
+Material phases
+---------------
+Phase 0 (matrix): model 1, E 10.0, poisson 0.46
+Phase 1 (filler): model 1, E 100.0, poisson 0.3
+
+Structure statistics
+--------------------
+Filler phase: 1
+Filler voxels: 2649
+Total voxels: 29791
+Filler volume fraction: 0.088919
+
+Solver settings
+---------------
+Grid N: 31
+Increments: [0.5, 0.5]
+Preconditioner: reference
+Diagnostics: False
+
+Charge
+------
+dF: [0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Control type: [F11 controlled, F12 controlled, F13 controlled, F21 controlled, P22 controlled, F23 controlled, F31 controlled, F32 controlled, P33 controlled]
+

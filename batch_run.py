@@ -1,60 +1,76 @@
 # -*- coding: utf-8 -*-
-"""Parallel batch runner for many independent FFT simulations."""
+"""YAML-driven runner for one or many independent FFT simulations."""
 
+import argparse
 import os
-
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("MKL_NUM_THREADS", "1")
-os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
-
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-from run_case import run_case
+from fg.io_paths import output_run_path
+from simulation_config import (
+    SUPPORTED_MODES,
+    apply_thread_env,
+    build_cases,
+    get_execution_settings,
+    load_config,
+    resolved_config_path,
+    write_resolved_config,
+)
 
 
-MAX_WORKERS = 3
-
-STRUCTURE_DIR = "3D_samples/voxels"
-CHARGE_PATH = "3D_samples/Charges/Strain_1.0_E10x.txt"
-OUTPUT_PATH = "Results/Benchmark_v2"
-
-CASE_SETTINGS = {
-    "charge_path": CHARGE_PATH,
-    "output_path": OUTPUT_PATH,
-    "N": 31,
-    "incre_list": [0.1]*10,
-    "preconditioner": "reference",
-    "diagnostics": False,
-    "save_plots": True,
-    "save_fields": False,
-    "field_filename": "fields.vti",
-    "plot_dpi": 200,
-    "matrix_phase": 0,
-    "filler_phase": 1,
-    "log_to_file": True,
-}
+DEFAULT_CONFIG = "benchmark_v3.yaml"
 
 
-def build_cases():
-    return [
-        dict(CASE_SETTINGS, structure_path=os.path.join(STRUCTURE_DIR, filename))
-        for filename in sorted(os.listdir(STRUCTURE_DIR))
-        if filename.lower().endswith(".npz")
-    ]
+def _run_case_worker(case):
+    from run_case import run_case
+
+    return run_case(case)
 
 
-def run_batch(cases, max_workers):
-    if not cases:
+def _case_output_path(case):
+    return output_run_path(case["structure_path"], case.get("output_path"), case.get("output_name"))
+
+
+def _prepare_cases(cases, on_existing):
+    runnable = []
+    skipped = []
+    for case in cases:
+        output_path = _case_output_path(case)
+        if os.path.exists(output_path):
+            if on_existing == "error":
+                raise RuntimeError(
+                    "Output path already exists for case {!r}: {}"
+                    .format(case.get("case_name", case["structure_path"]), output_path)
+                )
+            if on_existing == "skip":
+                skipped.append({
+                    "status": "skipped",
+                    "structure_path": case["structure_path"],
+                    "output_path": output_path,
+                })
+                print("skipping existing {} -> {}".format(case["structure_path"], output_path))
+                continue
+        runnable.append(case)
+    return runnable, skipped
+
+
+def run_batch(cases, max_workers, on_existing="error"):
+    runnable, results = _prepare_cases(cases, on_existing)
+    if not runnable:
         print("No cases to run.")
-        return []
+        return results
 
-    actual_workers = min(max_workers, len(cases))
-    print("Running {} cases with {} workers.".format(len(cases), actual_workers))
+    actual_workers = min(max_workers, len(runnable))
+    print("Running {} cases with {} workers.".format(len(runnable), actual_workers))
 
-    results = []
+    if actual_workers == 1:
+        for case in runnable:
+            result = _run_case_worker(case)
+            results.append(result)
+            print("finished {} -> {}".format(result["structure_path"], result["output_path"]))
+        return results
+
     with ProcessPoolExecutor(max_workers=actual_workers) as executor:
-        futures = [executor.submit(run_case, case) for case in cases]
+        futures = [executor.submit(_run_case_worker, case) for case in runnable]
         for future in as_completed(futures):
             result = future.result()
             results.append(result)
@@ -62,5 +78,67 @@ def run_batch(cases, max_workers):
     return results
 
 
+def print_dry_run(run_plan):
+    print("mode: {}".format(run_plan["mode"]))
+    print("base_path: {}".format(run_plan["base_path"]))
+    print("max_workers: {}".format(run_plan["execution"]["max_workers"]))
+    print("on_existing: {}".format(run_plan["execution"]["on_existing"]))
+    print("cases: {}".format(len(run_plan["cases"])))
+    for case in run_plan["cases"]:
+        print("- {} -> {}".format(case["structure_path"], _case_output_path(case)))
+
+
+def run_from_config(
+    config_path,
+    base_path_override=None,
+    mode_override=None,
+    max_workers_override=None,
+    dry_run=False,
+):
+    config = load_config(config_path)
+    apply_thread_env(config)
+    run_plan = build_cases(config, base_path_override=base_path_override, mode_override=mode_override)
+    if max_workers_override is not None:
+        execution = get_execution_settings(config, max_workers_override=max_workers_override)
+        run_plan["execution"].update(execution)
+
+    if dry_run:
+        print_dry_run(run_plan)
+        return []
+
+    if run_plan["execution"].get("save_resolved_config", True):
+        resolved_dir = resolved_config_path(config, run_plan["base_path"])
+        resolved_file = write_resolved_config(resolved_dir, config, run_plan)
+        if resolved_file:
+            print("resolved config saved to {}".format(resolved_file))
+
+    return run_batch(
+        run_plan["cases"],
+        run_plan["execution"]["max_workers"],
+        on_existing=run_plan["execution"]["on_existing"],
+    )
+
+
+def parse_args(default_mode=None):
+    parser = argparse.ArgumentParser(description="Run FFT simulations from a YAML config.")
+    parser.add_argument("config", nargs="?", default=DEFAULT_CONFIG, help="Path to a YAML run config.")
+    parser.add_argument("--base-path", help="Override config base_path, useful on servers.")
+    parser.add_argument("--mode", choices=SUPPORTED_MODES, default=default_mode, help="Override run.mode.")
+    parser.add_argument("--max-workers", type=int, help="Override execution.max_workers.")
+    parser.add_argument("--dry-run", action="store_true", help="Print resolved cases without running them.")
+    return parser.parse_args()
+
+
+def main(default_mode=None):
+    args = parse_args(default_mode=default_mode)
+    run_from_config(
+        args.config,
+        base_path_override=args.base_path,
+        mode_override=args.mode,
+        max_workers_override=args.max_workers,
+        dry_run=args.dry_run,
+    )
+
+
 if __name__ == "__main__":
-    run_batch(build_cases(), MAX_WORKERS)
+    main()

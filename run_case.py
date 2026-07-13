@@ -30,6 +30,9 @@ def _run_case_impl(case):
     filler_phase = _case_value(case, "filler_phase", 1)
     save_fields = _case_value(case, "save_fields", False)
     field_filename = _case_value(case, "field_filename", "fields.vti")
+    phase_path = case.get("phase_path")
+    phase_key = _case_value(case, "phase_key", "phase")
+    output_name = case.get("output_name")
 
     print(structure_path)
     start_time = time.time()
@@ -38,6 +41,9 @@ def _run_case_impl(case):
         charge_path=charge_path,
         output_path=output_path,
         N=N,
+        phase_path=phase_path,
+        phase_key=phase_key,
+        output_name=output_name,
     )
 
     prob.calculate(
@@ -68,6 +74,7 @@ def _run_case_impl(case):
         diagnostics=diagnostics,
         matrix_phase=matrix_phase,
         filler_phase=filler_phase,
+        phase_key=phase_key,
         plot_files=plot_files,
     )
     print("run metadata is saved...")
@@ -90,7 +97,9 @@ def run_case(case):
     if not case.get("log_to_file", False):
         return _run_case_impl(case)
 
-    output_path = ensure_output_path(output_run_path(case["structure_path"], case.get("output_path")))
+    output_path = ensure_output_path(
+        output_run_path(case["structure_path"], case.get("output_path"), case.get("output_name"))
+    )
     log_path = os.path.join(output_path, "run.log")
     with open(log_path, "w") as log_file:
         with contextlib.redirect_stdout(log_file), contextlib.redirect_stderr(log_file):

@@ -20,13 +20,15 @@ def phase_source(structure_path, phase_path=None):
     return structure_path, None
 
 
-def output_run_path(structure_path, output_path=None):
+def output_run_path(structure_path, output_path=None, output_name=None):
     normalized = os.path.normpath(structure_path)
     parent = output_path if output_path is not None else os.path.dirname(normalized)
-    name = os.path.basename(normalized)
-    if os.path.isfile(normalized):
-        name = os.path.splitext(name)[0]
-    return os.path.join(parent, "{}_output".format(name))
+    if output_name is None:
+        name = os.path.basename(normalized)
+        if os.path.isfile(normalized):
+            name = os.path.splitext(name)[0]
+        output_name = "{}_output".format(name)
+    return os.path.join(parent, output_name)
 
 
 def ensure_output_path(output_path):

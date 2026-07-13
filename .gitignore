@@ -28,6 +28,7 @@ Thumbs.db
 *.tmp
 *.bak
 ~$*
+microstructure_generation/3D_samples/
 
 # Generated numerical / visualization artifacts
 *.vti

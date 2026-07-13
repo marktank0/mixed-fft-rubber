@@ -155,11 +155,11 @@ def save_output_csv(path, output, header):
     
 class FFTSolver:
     """  """
-    def __init__(self, structure_path, charge_path = None, output_path = None, N = 31, phase_path = None, phase_key = "phase"):
+    def __init__(self, structure_path, charge_path = None, output_path = None, N = 31, phase_path = None, phase_key = "phase", output_name = None):
         """ """
         self.structure_path = structure_path
         self.charge_path = charge_path or default_charge_path(structure_path)
-        self.output_path = ensure_output_path(output_run_path(structure_path, output_path))
+        self.output_path = ensure_output_path(output_run_path(structure_path, output_path, output_name))
         self.path = self.output_path
         self.pb = Problem(self.charge_path)
         #
