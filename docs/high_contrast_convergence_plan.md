@@ -10,6 +10,15 @@ solver status in `run_metadata.txt`). C5-C8 remain open; C5 (inexact inner
 tolerances) and C6 (reference-tangent choice) are the next levers if
 high-contrast Krylov counts are still too high.
 
+Measured after C1-C4 (structure phr_18.45, N = 31, reference
+preconditioner): contrast 10, 3 increments: 37 s, results identical to the
+pre-change solver to 1e-14. Contrast 500 (E 10 vs 5000), 3 increments:
+**converges** with zero load-step cuts, 6 Newton iterations per increment
+(line search takes alpha = 0.5 twice per increment, alpha = 1 otherwise),
+130-240 GMRES iterations per solve, ~190 s per increment (~30 min for a
+full 10-increment case). The high Krylov counts confirm D5/D7: C5 and C6
+are the next levers to bring 500x down to minutes per case.
+
 Target: the mixed FFT solver in `fg/mxfft.py` (and, where changes are shared,
 `fg/fft.py`), the constitutive files in `fg/constitutive_incompressible/`, and
 the batch layer (`run_case.py`, `simulation_config.py`, `run_metadata.py`).
