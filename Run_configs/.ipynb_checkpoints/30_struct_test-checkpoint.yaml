@@ -2,14 +2,14 @@ version: 1
 base_path: /home/jovyan/mixed-fft-rubber/
 
 experiment:
-  name: 30_struct_test_run
-  output_root: Results/30_struct_test_run_v3
+  name: 50_struct_test_run
+  output_root: Results/50_improved_struct_v1
 
 run:
   mode: batch # cases | batch
 
 execution:
-  max_workers: 30
+  max_workers: 60
   log_to_file: true
   on_existing: skip # skip | overwrite | error
   save_resolved_config: true
@@ -22,10 +22,10 @@ execution:
 defaults:
   solver:
     type: mixed
-    N: 31
+    N: 63
     increments:
-      repeat: 40
-      value: 0.025
+      repeat: 10
+      value: 0.10
     preconditioner: reference
     diagnostics: false
     savemodel: normal

@@ -1,15 +1,15 @@
 version: 1
-base_path: /home/jovyan/mixed-fft-rubber/
+base_path: .
 
 experiment:
-  name: 50_struct_test_run
-  output_root: Results/50_improved_struct_v1
+  name: 30_struct_test_run
+  output_root: Results/speed_tes
 
 run:
-  mode: batch # cases | batch
+  mode: cases # cases | batch
 
 execution:
-  max_workers: 60
+  max_workers: 1
   log_to_file: true
   on_existing: skip # skip | overwrite | error
   save_resolved_config: true
@@ -22,10 +22,10 @@ execution:
 defaults:
   solver:
     type: mixed
-    N: 63
+    N: 31
     increments:
       repeat: 10
-      value: 0.10
+      value: 0.1
     preconditioner: reference
     diagnostics: false
     savemodel: normal
@@ -42,7 +42,7 @@ defaults:
     field_filename: fields.vti
 
   charge:
-    path: 3D_samples/Charges/Neo_1.0_E10-100x.txt
+    path: 3D_samples/Charges/Neo_0.5_E10-5000x.txt
 
 batch:
   structures:
@@ -54,6 +54,3 @@ batch:
 cases:
   - name: one_voxel
     structure_path: 3D_samples/voxels/1_voxel.npz
-
-  - name: two_voxel
-    structure_path: 3D_samples/voxels/2_voxel.npz

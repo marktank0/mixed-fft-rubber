@@ -24,8 +24,8 @@ defaults:
     type: mixed
     N: 63
     increments:
-      repeat: 10
-      value: 0.10
+      repeat: 20
+      value: 0.05
     preconditioner: reference
     diagnostics: false
     savemodel: normal
@@ -46,7 +46,7 @@ defaults:
 
 batch:
   structures:
-    glob: microstructure_generation/3D_samples/test/voxel_structures/*.npz
+    glob: microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/*.npz
     sort: name
     include: ["*_voxel.npz"]
     exclude: ["test_*"]
