@@ -17,7 +17,7 @@ from simulation_config import (
 )
 
 
-DEFAULT_CONFIG = "benchmark_v3.yaml"
+DEFAULT_CONFIG = "Run_configs/1_test_run.yaml"
 
 
 def _run_case_worker(case):
@@ -93,6 +93,8 @@ def run_from_config(
     base_path_override=None,
     mode_override=None,
     max_workers_override=None,
+    log_to_file_override=None,
+    on_existing_override=None,
     dry_run=False,
 ):
     config = load_config(config_path)
@@ -101,6 +103,12 @@ def run_from_config(
     if max_workers_override is not None:
         execution = get_execution_settings(config, max_workers_override=max_workers_override)
         run_plan["execution"].update(execution)
+    if log_to_file_override is not None:
+        run_plan["execution"]["log_to_file"] = bool(log_to_file_override)
+        for case in run_plan["cases"]:
+            case["log_to_file"] = bool(log_to_file_override)
+    if on_existing_override is not None:
+        run_plan["execution"]["on_existing"] = on_existing_override
 
     if dry_run:
         print_dry_run(run_plan)
@@ -119,23 +127,52 @@ def run_from_config(
     )
 
 
-def parse_args(default_mode=None):
+def parse_args(default_config=DEFAULT_CONFIG, default_mode=None, default_max_workers=None):
     parser = argparse.ArgumentParser(description="Run FFT simulations from a YAML config.")
-    parser.add_argument("config", nargs="?", default=DEFAULT_CONFIG, help="Path to a YAML run config.")
+    parser.add_argument("config", nargs="?", default=default_config, help="Path to a YAML run config.")
     parser.add_argument("--base-path", help="Override config base_path, useful on servers.")
     parser.add_argument("--mode", choices=SUPPORTED_MODES, default=default_mode, help="Override run.mode.")
-    parser.add_argument("--max-workers", type=int, help="Override execution.max_workers.")
+    parser.add_argument("--max-workers", type=int, default=default_max_workers, help="Override execution.max_workers.")
+    parser.add_argument(
+        "--terminal-output",
+        action="store_true",
+        help="Print solver progress to this terminal instead of redirecting each case to run.log.",
+    )
+    parser.add_argument(
+        "--log-to-file",
+        action="store_true",
+        help="Redirect each case's solver progress to run.log.",
+    )
+    parser.add_argument("--on-existing", choices=("skip", "overwrite", "error"), help="Override execution.on_existing.")
     parser.add_argument("--dry-run", action="store_true", help="Print resolved cases without running them.")
     return parser.parse_args()
 
 
-def main(default_mode=None):
-    args = parse_args(default_mode=default_mode)
+def main(
+    default_config=DEFAULT_CONFIG,
+    default_mode=None,
+    default_max_workers=None,
+    default_log_to_file=None,
+    default_on_existing=None,
+):
+    args = parse_args(
+        default_config=default_config,
+        default_mode=default_mode,
+        default_max_workers=default_max_workers,
+    )
+    log_to_file_override = default_log_to_file
+    if args.terminal_output:
+        log_to_file_override = False
+    if args.log_to_file:
+        log_to_file_override = True
+    on_existing_override = args.on_existing if args.on_existing is not None else default_on_existing
     run_from_config(
         args.config,
         base_path_override=args.base_path,
         mode_override=args.mode,
         max_workers_override=args.max_workers,
+        log_to_file_override=log_to_file_override,
+        on_existing_override=on_existing_override,
         dry_run=args.dry_run,
     )
 
