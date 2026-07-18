@@ -5,7 +5,7 @@ Created on Fri May  7 03:17:38 2021
 @author: WANG Mingchuan
 
 code for <<A mixed FFT-based approach for incompressible
-or slightly compressible hyperelastic solids under finite deformation>> 
+or slightly compressible hyperelastic solids under finite deformation>>
 
 
 Mixed FFT implementation
@@ -13,9 +13,10 @@ Mixed FFT implementation
 
 import numpy as np
 # import numba as nb
+import json
 import time
+import scipy.fft
 import scipy.sparse.linalg as sp
-import itertools
 import importlib.util
 import os
 
@@ -63,8 +64,8 @@ class Problem:
         model_para = modelparameters[1:]
         #
         return model_name, model_para
-        
-    
+
+
 #-----------------------------------------useful functions
 ddot42 = lambda A4,B2: np.einsum('ijklxyz,klxyz  ->ijxyz  ',A4,B2)
 ddot22 = lambda A2,B2: np.einsum("ijxyz,ijxyz    ->xyz    ",A2,B2)
@@ -84,12 +85,12 @@ def vec2mat9(vec):
                      [vec[6],vec[7],vec[8]]])
 
 
-def load_umat(module_path):
+def load_umat(module_path, function_name="umat"):
     module_name = "_fg_umat_{}".format(os.path.basename(module_path).replace(".", "_"))
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.umat
+    return getattr(module, function_name)
 
 
 def load_phase(path, N, phase_path=None, phase_key="phase"):
@@ -125,6 +126,21 @@ def load_phase(path, N, phase_path=None, phase_key="phase"):
     return phase.astype(float, copy=False), phase_path
 
 
+def build_Ghat4(N, stress_control, ndim=3):
+    """Green-projection symbol; vectorized form of the original loop."""
+    freq = np.arange(-(N-1)/2., +(N+1)/2.)        # coordinate axis -> freq. axis
+    q = np.stack(np.meshgrid(freq, freq, freq, indexing="ij"))   # (3,N,N,N)
+    q2 = np.einsum("kxyz,kxyz->xyz", q, q)
+    zero_freq = (q2 == 0)
+    q2safe = np.where(zero_freq, 1.0, q2)
+    QQ = np.einsum("jxyz,mxyz->jmxyz", q, q)/q2safe              # q_j q_m / |q|^2
+    Ghat4 = np.einsum("il,jmxyz->ijlmxyz", np.eye(ndim), QQ)
+    Ghat4[:, :, :, :, zero_freq] = 0.0
+    for (i, j) in stress_control:                # zero freq. -> mean
+        Ghat4[i, j, i, j, zero_freq] = 1.0
+    return Ghat4
+
+
 def format_scientific_cut(value, decimals=2):
     if not np.isfinite(value):
         return str(value)
@@ -150,9 +166,9 @@ def save_output_csv(path, output, header):
 
 
 #---------------------------------------------------------
-    
-    
-    
+
+
+
 class FFTSolver:
     """  """
     def __init__(self, structure_path, charge_path = None, output_path = None, N = 31, phase_path = None, phase_key = "phase", output_name = None):
@@ -168,18 +184,15 @@ class FFTSolver:
         self.N = N
         #
         self.iter_num = 0
+        self.solver_status = "not_run"
+        self.solver_stats = {}
         print("---------------------------------------------")
         print("-- mixed FFT based solver, by WANG Mingchuan")
         print("---------------------------------------------")
         #
     #
     def __average(self, A2):
-        N = self.N
-        avg = np.zeros((3,3))
-        for x,y,z in itertools.product(range(N),repeat=3):
-            avg += A2[:,:,x,y,z]
-        avg = avg/(N*N*N)
-        return avg
+        return A2.mean(axis=(2,3,4))
     #
     def __counter(self,dX):
         self.iter_num += 1
@@ -202,7 +215,7 @@ class FFTSolver:
                 print("{} iter {} linear residual {:.3e}".format(label, self.iter_num, residual))
 
         return callback
-    
+
     def calculate(
         self,
         increment = 10,
@@ -214,6 +227,11 @@ class FFTSolver:
         diagnostics=False,
         save_fields=False,
         field_filename="fields.vti",
+        tol_rel=1.e-5,
+        tol_abs=1.e-10,
+        max_newton=15,
+        max_backtracks=8,
+        min_substep_ratio=1.0/16.0,
     ):
         """ """
         #
@@ -234,25 +252,16 @@ class FFTSolver:
         if give_Ghat:
             Ghat4 = Ghat_given
         else:
-            freq   = np.arange(-(N-1)/2.,+(N+1)/2.)        # coordinate axis -> freq. axis
-            Ghat4  = np.zeros([ndim,ndim,ndim,ndim,N,N,N]) # zero initialize
-            # - compute
-            for i,j,l,m in itertools.product(range(ndim),repeat=4):
-                for x,y,z    in itertools.product(range(N),   repeat=3):
-                    q = np.array([freq[x], freq[y], freq[z]])  # frequency vector
-                    if not q.dot(q) == 0:                      # zero freq. -> mean
-                        Ghat4[i,j,l,m,x,y,z] = delta(i,l)*q[j]*q[m]/(q.dot(q))
-                    else:
-                        if (i,j) in self.pb.stress_control:
-                            Ghat4[i,j,l,m,x,y,z] = delta(i,l)*delta(j,m)
+            Ghat4 = build_Ghat4(N, self.pb.stress_control, ndim)
         print("Ghat4 is formed...")
         #
-        fft    = lambda x  : np.fft.fftshift(np.fft.fftn (np.fft.ifftshift(x),[N,N,N]))
-        ifft   = lambda x  : np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(x),[N,N,N]))
+        # shifts act on the spatial axes only (component axes are untouched
+        # by the transform, so shifting them cancelled out anyway)
+        axes = (-3, -2, -1)
+        fft    = lambda x  : np.fft.fftshift(scipy.fft.fftn (np.fft.ifftshift(x, axes=axes), axes=axes, workers=-1), axes=axes)
+        ifft   = lambda x  : np.fft.fftshift(scipy.fft.ifftn(np.fft.ifftshift(x, axes=axes), axes=axes, workers=-1), axes=axes)
         #
         G      = lambda A2 : np.real( ifft( ddot42(Ghat4,fft(A2)))).reshape(-1)
-        #K_dF   = lambda dFm: ddot42(K4,dFm.reshape(ndim,ndim,N,N,N))
-        #G_K_dF = lambda dFm: G(K_dF(dFm))
         #
         phase = self.phase
         #
@@ -260,36 +269,39 @@ class FFTSolver:
         parameter_b = self.pb.model_b_para
         #
         consti_a_path = os.path.join("fg/constitutive_incompressible",self.pb.model_a_name)
-        consti_a = load_umat(consti_a_path)
+        consti_a = load_umat(consti_a_path, "umat_field")
         consti_b_path = os.path.join("fg/constitutive_incompressible",self.pb.model_b_name)
-        consti_b = load_umat(consti_b_path)
+        consti_b = load_umat(consti_b_path, "umat_field")
         #
-        def constitutive(F,Yali):
+        mask_a = (phase == 0)
+        mask_b = (phase == 1)
+        if not np.all(mask_a | mask_b):
+            raise ValueError("Phase field contains values other than 0 and 1")
+        #
+        def constitutive(F, Yali, need_tangent=True):
             P = np.zeros([ndim,ndim,N,N,N])
-            K4 = np.zeros([ndim,ndim,ndim,ndim,N,N,N])
+            K4 = np.zeros([ndim,ndim,ndim,ndim,N,N,N]) if need_tangent else None
             JFinv = np.zeros([ndim,ndim,N,N,N])
             Kappa_inv = np.zeros([N,N,N])
             #
-            for x,y,z in itertools.product(range(N),repeat=3):
-                f = F[:,:,x,y,z]
-                yl = Yali[x,y,z]
-                #
-                if phase[x,y,z] == 0:
-                    p,k4,jfmt,kappainv = consti_a(f,yl,parameter_a)
-                    #
-                elif phase[x,y,z] == 1:
-                    p,k4,jfmt,kappainv = consti_b(f,yl,parameter_b)
-                #
-                P[:,:,x,y,z] = p
-                #
-                K4[:,:,:,:,x,y,z] = k4
-                #
-                JFinv[:,:,x,y,z] = jfmt
-                #
-                Kappa_inv[x,y,z] = kappainv
+            for mask, consti, para in ((mask_a, consti_a, parameter_a),
+                                       (mask_b, consti_b, parameter_b)):
+                if not mask.any():
+                    continue
+                fv = np.moveaxis(F[:, :, mask], -1, 0)          # (m,3,3)
+                ylv = Yali[mask]
+                p, k4, jfmt, kappainv = consti(fv, ylv, para, need_tangent=need_tangent)
+                P[:, :, mask] = np.moveaxis(p, 0, -1)
+                if need_tangent:
+                    K4[:, :, :, :, mask] = np.moveaxis(k4, 0, -1)
+                JFinv[:, :, mask] = np.moveaxis(jfmt, 0, -1)
+                Kappa_inv[mask] = kappainv
             return P, K4, JFinv, Kappa_inv
-        
-        
+
+        def det_field(F):
+            """det(F) per voxel, shape (N^3,)."""
+            return np.linalg.det(np.moveaxis(F.reshape(ndim, ndim, -1), -1, 0))
+
         # set macroscopic loading----------------------------
         DbarF_total = np.zeros([ndim,ndim,N,N,N])
         #
@@ -322,21 +334,22 @@ class FFTSolver:
         def calb(F,P,YALI,Kappa_inv,TbarP):
             """ to calculate the b in KdX = b """
             b = np.zeros(num_tol)
-            b1 = G(TbarP - P)
-            b2 = np.zeros([N,N,N])
-            for x,y,z in itertools.product(range(N),repeat=3):
-                f = F[:,:,x,y,z]
-                J = np.linalg.det(f)
-                b2[x,y,z] = 1 - J + YALI[x,y,z]*Kappa_inv[x,y,z]
-            b2 = b2.reshape(-1)
-            #
-            b[0:num_up] = b1
-            b[num_up:num_tol+1] = b2
+            b[0:num_up] = G(TbarP - P)
+            J = det_field(F)
+            b[num_up:num_tol+1] = 1.0 - J + (YALI*Kappa_inv).reshape(-1)
             #
             return b
-        
+
+        # current tangent fields used by the matrix-free operator; rebound
+        # by the Newton loop after every accepted step
+        state = {"K4": None, "JFmT": None, "Kappa_inv": None}
+
         def KdX(dX):
             """ A(X) """
+            K4 = state["K4"]
+            JFmT = state["JFmT"]
+            Kappa_inv = state["Kappa_inv"]
+            #
             dFv, dpv = np.split(dX, [num_up])
             dF = dFv.reshape([ndim,ndim,N,N,N])
             dp = dpv.reshape([N,N,N])
@@ -357,7 +370,7 @@ class FFTSolver:
             #
             return result
 
-        def print_linear_diagnostics(dX, Mop):
+        def print_linear_diagnostics(dX, Mop, b):
             """Print original-system and preconditioned linear residuals."""
             residual = b - KdX(dX)
             rhs_norm = max(np.linalg.norm(b), 1.0)
@@ -380,75 +393,202 @@ class FFTSolver:
                     .format(prec_total, prec_F, prec_p)
                 )
 
+        def solve_linear(b):
+            """One preconditioned Krylov solve of KdX = b."""
+            self.iter_num = 0
+            Aop = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float')
+            Mop = None
+            if preconditioner == "reference":
+                K_ref = np.mean(state["K4"], axis=(4,5,6))
+                J_ref = np.mean(state["JFmT"], axis=(2,3,4))
+                kappa_inv_ref = np.mean(state["Kappa_inv"])
+                zero_mode_free = [3*i + j for i,j in self.pb.stress_control] + [9]
+                inv_symbol = build_mixed_reference_symbol(
+                    Ghat4, K_ref, J_ref, kappa_inv_ref,
+                    zero_mode_free_components=zero_mode_free,
+                )
+                Mop = sp.LinearOperator(
+                    shape=(num_tol,num_tol),
+                    matvec=lambda vec: apply_mixed_reference_preconditioner(vec, inv_symbol),
+                    dtype='float',
+                )
+            if preconditioner in ("gmres", "reference"):
+                gmres_callback = self.__gmres_progress_counter(label="gmres")
+                dX,flag = sp.gmres(rtol=1.e-6, atol=1.e-10,
+                  A = Aop, b = b, M = Mop, callback=gmres_callback,
+                  callback_type="pr_norm", restart=100, maxiter=1000,
+                )
+            else:
+                cg_callback = self.__progress_counter(KdX, b, label="cg")
+                dX,flag = sp.cg(rtol=1.e-6, atol=1.e-10,
+                  A = Aop, b = b, callback=cg_callback,
+                )
+            if diagnostics:
+                print_linear_diagnostics(dX, Mop, b)
+            return dX, flag, Mop
+
+        def newton_increment(F, YALI, TbarP):
+            """Newton solve at fixed load TbarP starting from (F, YALI).
+
+            Convergence is judged on the true nonlinear residual b, each block
+            relative to its norm at the start of the sub-increment. Every step
+            is safeguarded: det(F) must stay positive and the residual must
+            decrease (backtracking line search), otherwise the sub-increment
+            is reported as failed so the caller can cut the load step.
+            Returns (converged, F, YALI, P, stats).
+            """
+            F = F.copy()
+            YALI = YALI.copy()
+            P, K4, JFmT, Kappa_inv = constitutive(F, YALI)
+            state.update(K4=K4, JFmT=JFmT, Kappa_inv=Kappa_inv)
+            b = calb(F, P, YALI, Kappa_inv, TbarP)
+            #
+            res_F = np.linalg.norm(b[0:num_up])
+            res_p = np.linalg.norm(b[num_up:num_tol])
+            ref_F = max(res_F, tol_abs)
+            ref_p = max(res_p, tol_abs)
+            merit = np.hypot(res_F/ref_F, res_p/ref_p)
+            #
+            Fn = np.linalg.norm(F)
+            #
+            stats = {
+                "newton_iterations": 0,
+                "krylov_iterations": [],
+                "alphas": [],
+                "residual_F": [res_F],
+                "residual_p": [res_p],
+                "fail_reason": None,
+            }
+
+            def is_converged():
+                return (res_F <= max(tol_rel*ref_F, tol_abs)
+                        and res_p <= max(tol_rel*ref_p, tol_abs))
+
+            while not is_converged():
+                if stats["newton_iterations"] >= max_newton:
+                    stats["fail_reason"] = "max_newton"
+                    return False, F, YALI, P, stats
+                #
+                dX, flag, Mop = solve_linear(b)
+                stats["krylov_iterations"].append(self.iter_num)
+                if flag > 0:
+                    stats["fail_reason"] = "krylov_flag_{}".format(flag)
+                    print("linear solver did not converge (flag {})".format(flag))
+                    return False, F, YALI, P, stats
+                dFm, dYL = np.split(dX, [num_up])
+                dF = dFm.reshape(ndim,ndim,N,N,N)
+                dp = dYL.reshape(N,N,N)
+                #
+                # safeguarded update: keep det(F) positive and require a
+                # residual decrease, halving the step length otherwise
+                J_floor = 0.05*det_field(F).min()
+                alpha = 1.0
+                accepted = False
+                for _ in range(max_backtracks):
+                    F_t = F + alpha*dF
+                    if det_field(F_t).min() <= J_floor:
+                        alpha *= 0.5
+                        continue
+                    YALI_t = YALI + alpha*dp
+                    P_t, _, _, _ = constitutive(F_t, YALI_t, need_tangent=False)
+                    b_t = calb(F_t, P_t, YALI_t, Kappa_inv, TbarP)
+                    res_F_t = np.linalg.norm(b_t[0:num_up])
+                    res_p_t = np.linalg.norm(b_t[num_up:num_tol])
+                    merit_t = np.hypot(res_F_t/ref_F, res_p_t/ref_p)
+                    if merit_t < merit:
+                        accepted = True
+                        break
+                    alpha *= 0.5
+                if not accepted:
+                    stats["fail_reason"] = "line_search"
+                    print("line search failed (last alpha {:.3e})".format(alpha))
+                    return False, F, YALI, P, stats
+                #
+                F = F_t
+                YALI = YALI_t
+                b = b_t
+                res_F, res_p, merit = res_F_t, res_p_t, merit_t
+                P, K4, JFmT, Kappa_inv = constitutive(F, YALI)
+                state.update(K4=K4, JFmT=JFmT, Kappa_inv=Kappa_inv)
+                #
+                stats["newton_iterations"] += 1
+                stats["alphas"].append(alpha)
+                stats["residual_F"].append(res_F)
+                stats["residual_p"].append(res_p)
+                print("res {:.3e} (F-block {:.3e} p-block {:.3e}) alpha {:.3g} iter times {}".format(
+                    alpha*np.linalg.norm(dFm)/Fn, res_F/ref_F, res_p/ref_p, alpha, self.iter_num))
+            #
+            return True, F, YALI, P, stats
+
         #
         F = np.array(eyeMat,copy=True)
         YALI = np.zeros([N,N,N])
         #
+        self.solver_stats = {
+            "status": None,
+            "tol_rel": tol_rel,
+            "tol_abs": tol_abs,
+            "max_newton": max_newton,
+            "preconditioner": preconditioner,
+            "step_cuts": 0,
+            "increments": [],
+        }
+        failed = False
+        #
         inc_tol = 0.0
-        for inc in incre_list:
-            print("this increment is {} ------------------------".format(inc))
-            inc_tol = inc_tol + inc
-            DbarF = inc*DbarF_total
-            TbarP = inc_tol*DbarP_total
-            t1 = time.time()
+        targets = np.cumsum(incre_list)
+        step = float(incre_list[0])
+        easy_streak = 0
+        for k in range(len(targets)):
+            target = float(targets[k])
+            inc_full = float(incre_list[k])
+            step = min(step, inc_full)
+            P_boundary = None
             #
-            F     += DbarF
-            P,K4, JFmT, Kappa_inv = constitutive(F,YALI)
-            b = calb(F,P,YALI,Kappa_inv,TbarP)
-            #
-            Fn    = np.linalg.norm(F)
-            iiter = 0
-            #
-            #print("iteration begins...")
-            while iiter < 100:
-                self.iter_num = 0
-                Aop = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float')
-                Mop = None
-                if preconditioner == "reference":
-                    K_ref = np.mean(K4, axis=(4,5,6))
-                    J_ref = np.mean(JFmT, axis=(2,3,4))
-                    kappa_inv_ref = np.mean(Kappa_inv)
-                    zero_mode_free = [3*i + j for i,j in self.pb.stress_control] + [9]
-                    inv_symbol = build_mixed_reference_symbol(
-                        Ghat4, K_ref, J_ref, kappa_inv_ref,
-                        zero_mode_free_components=zero_mode_free,
-                    )
-                    Mop = sp.LinearOperator(
-                        shape=(num_tol,num_tol),
-                        matvec=lambda vec: apply_mixed_reference_preconditioner(vec, inv_symbol),
-                        dtype='float',
-                    )
-                if preconditioner in ("gmres", "reference"):
-                    gmres_callback = self.__gmres_progress_counter(label="gmres")
-                    dX,flag = sp.gmres(rtol=1.e-6, atol=1.e-10,
-                      A = Aop, b = b, M = Mop, callback=gmres_callback,
-                      callback_type="pr_norm", restart=100, maxiter=1000,
-                    )
-                else:
-                    cg_callback = self.__progress_counter(KdX, b, label="cg")
-                    dX,flag = sp.cg(rtol=1.e-6, atol=1.e-10,
-                      A = Aop, b = b, callback=cg_callback,
-                    )                                        # solve linear system using CG     #!!!!!!!!!!!!!!! Adjusted rtol from 1.e-8 to 1.e-6, atol from 0.0 to 1.e-10
-                #print(flag)
-                if diagnostics:
-                    print_linear_diagnostics(dX, Mop)
-                if flag > 0:
-                    break
-                dFm, dYL = np.split(dX, [num_up])
-                F    += dFm.reshape(ndim,ndim,N,N,N)
-                YALI += dYL.reshape(N,N,N)
-                P,K4, JFmT, Kappa_inv = constitutive(F,YALI)
-                b     = calb(F,P,YALI,Kappa_inv,TbarP)
+            while inc_tol < target - 1.e-12:
+                step = min(step, target - inc_tol)
+                print("this increment is {} (target {}) ------------------------".format(step, target))
+                t1 = time.time()
                 #
-                print("res {:.3e} iter times {}".format(np.linalg.norm(dFm)/Fn, self.iter_num))
-                if np.linalg.norm(dFm)/Fn<5.e-5 and iiter>0: break # check convergence
-                iiter += 1
+                F_trial = F + step*DbarF_total
+                TbarP = (inc_tol + step)*DbarP_total
+                #
+                converged, F_new, YALI_new, P_new, inc_stats = newton_increment(F_trial, YALI, TbarP)
+                #
+                inc_stats["step"] = step
+                inc_stats["load_start"] = inc_tol
+                inc_stats["converged"] = converged
+                inc_stats["time_seconds"] = time.time() - t1
+                self.solver_stats["increments"].append(inc_stats)
+                #
+                if converged:
+                    F = F_new
+                    YALI = YALI_new
+                    P_boundary = P_new
+                    inc_tol += step
+                    if inc_stats["newton_iterations"] <= 4:
+                        easy_streak += 1
+                    else:
+                        easy_streak = 0
+                    if easy_streak >= 2:
+                        step = min(step*1.5, inc_full)
+                    print("time this step...{}".format(inc_stats["time_seconds"]))
+                else:
+                    # roll back to the last accepted state and cut the load step
+                    easy_streak = 0
+                    step *= 0.5
+                    self.solver_stats["step_cuts"] += 1
+                    print("increment failed ({}); cutting step to {:.4g}".format(
+                        inc_stats["fail_reason"], step))
+                    if step < inc_full*min_substep_ratio - 1.e-15:
+                        failed = True
+                        break
             #
-            t2 = time.time()
-            print("time this step...{}".format(t2-t1))
+            if failed:
+                break
             #
-            #save average stress and strain
-            Pavg = self.__average(P)
+            #save average stress and strain at the original increment boundary
+            Pavg = self.__average(P_boundary)
             self.Ps.append(Pavg)
             print("now P is...")
             print(Pavg)
@@ -457,8 +597,20 @@ class FFTSolver:
             print("now F is...")
             print(Favg)
             #
-        #-------------------------------post 
-        print("finish!")
+        #-------------------------------post
+        if failed:
+            self.solver_status = "failed"
+            print("SOLVER FAILED: no convergence at load {:.4g} even with the".format(inc_tol))
+            print("minimum sub-step; results are only saved up to the last")
+            print("converged increment boundary.")
+        elif self.solver_stats["step_cuts"] > 0:
+            self.solver_status = "converged_with_step_cuts"
+            print("finish! (with {} load-step cuts)".format(self.solver_stats["step_cuts"]))
+        else:
+            self.solver_status = "converged"
+            print("finish!")
+        self.solver_stats["status"] = self.solver_status
+        self.__save_stats(self.path)
         #
         #
         if savemodel == "normal" or savemodel == "both":
@@ -468,12 +620,19 @@ class FFTSolver:
         if save_fields:
             field_file = save_vti_cell_fields(
                 self.path,
-                solution_fields(F, P, phase, pressure=YALI),
+                solution_fields(F, P_boundary if P_boundary is not None else np.zeros_like(F), phase, pressure=YALI),
                 filename=field_filename,
             )
             print("local fields are saved to {}".format(field_file))
     #=============================================================================
-    
+
+    def __save_stats(self, path):
+        ensure_output_path(path)
+        outfile = os.path.join(path, "solver_stats.json")
+        with open(outfile, "w") as file:
+            json.dump(self.solver_stats, file, indent=1, default=float)
+        print("solver stats are saved to solver_stats.json")
+
     def __save_F_P(self,path):
         #
         num = len(self.Ps)
@@ -494,17 +653,3 @@ class FFTSolver:
             "P11","P12","P13","P21","P22","P23","P31","P32","P33",
         ])
         save_output_csv(path, output, header)
-        
-        
-                
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        

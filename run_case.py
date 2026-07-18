@@ -76,6 +76,7 @@ def _run_case_impl(case):
         filler_phase=filler_phase,
         phase_key=phase_key,
         plot_files=plot_files,
+        solver_status=getattr(prob, "solver_status", None),
     )
     print("run metadata is saved...")
     print(metadata_file)

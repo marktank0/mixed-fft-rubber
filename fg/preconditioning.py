@@ -2,16 +2,23 @@
 """Reference-operator preconditioners for FFT-Galerkin linear solves."""
 
 import numpy as np
+import scipy.fft
+
+_AXES = (1, 2, 3)
 
 
 def _fft_field(field):
-    shape = field.shape[1:]
-    return np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(field), shape, axes=(1, 2, 3)))
+    return np.fft.fftshift(
+        scipy.fft.fftn(np.fft.ifftshift(field, axes=_AXES), axes=_AXES, workers=-1),
+        axes=_AXES,
+    )
 
 
 def _ifft_field(field_hat):
-    shape = field_hat.shape[1:]
-    return np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(field_hat), shape, axes=(1, 2, 3))).real
+    return np.fft.fftshift(
+        scipy.fft.ifftn(np.fft.ifftshift(field_hat, axes=_AXES), axes=_AXES, workers=-1),
+        axes=_AXES,
+    ).real
 
 
 def _pinv_symbol(symbol, rcond):

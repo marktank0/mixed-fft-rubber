@@ -3,7 +3,11 @@ base_path: .
 
 experiment:
   name: 30_struct_test_run
+<<<<<<< HEAD
   output_root: Results/speed_test_18_07
+=======
+  output_root: Results/speed_test_18_07_higher_contrast
+>>>>>>> FFT_for_higher_contrast
 
 run:
   mode: cases # cases | batch
@@ -52,5 +56,9 @@ batch:
     exclude: ["test_*"]
 
 cases:
+<<<<<<< HEAD
   - name: one_voxel
+=======
+  - name: one_voxel_higher_contrast_branch
+>>>>>>> FFT_for_higher_contrast
     structure_path: 3D_samples/voxels/1_voxel.npz
