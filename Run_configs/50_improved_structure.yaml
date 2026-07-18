@@ -1,5 +1,5 @@
 version: 1
-base_path: /home/jovyan/mixed-fft-rubber/
+base_path: . #/home/jovyan/mixed-fft-rubber/
 
 experiment:
   name: 50_struct_test_run
@@ -9,7 +9,7 @@ run:
   mode: batch # cases | batch
 
 execution:
-  max_workers: 60
+  max_workers: 6
   log_to_file: true
   on_existing: skip # skip | overwrite | error
   save_resolved_config: true

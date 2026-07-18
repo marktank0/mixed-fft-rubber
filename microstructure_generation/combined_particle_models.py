@@ -10,6 +10,10 @@ if SCRIPT_DIR not in sys.path:
 
 import numpy as np
 import pyvista as pv
+from scipy import ndimage
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
+from scipy.spatial import cKDTree
 
 from boolean_sphere_models.constant_particle_model import BooleanSphereExclusionModel
 from boolean_sphere_models.spheroidal_inclusion_model import BooleanSpheroidalInclusionModel
@@ -35,7 +39,7 @@ DEFAULT_SEED = 5
 
 DEFAULT_MODEL1_INTENSITY = 240.0
 DEFAULT_MODEL1_RADIUS = 0.10
-DEFAULT_MODEL2_INTENSITY = 2
+DEFAULT_MODEL2_INTENSITY = 4
 DEFAULT_MODEL2_MIN_R1 = 0.25
 DEFAULT_MODEL2_MAX_R1 = 0.5
 DEFAULT_MODEL3_INTENSITY = 1.8
@@ -56,6 +60,13 @@ DEFAULT_RUBBER_DENSITY = 0.92
 # DEFAULT_VOXEL_GRID_SHAPE = (VOXEL_COARSENESS*DEFAULT_BOX_SIZE, VOXEL_COARSENESS*DEFAULT_BOX_SIZE, VOXEL_COARSENESS*DEFAULT_BOX_SIZE)
 DEFAULT_VOXEL_GRID_SHAPE = (63, 63, 63)
 DEFAULT_NOTES = ""
+
+# Cleanup defaults (both steps are opt-in via the 'cleanup' params block).
+DEFAULT_REMOVE_FLOATING_CLUSTERS = True
+DEFAULT_MIN_CLUSTER_SIZE = 4
+DEFAULT_FILL_OCCLUSIONS = True
+DEFAULT_MAX_OCCLUSION_VOXELS = 9
+DEFAULT_OCCLUSION_PERIODIC = True
 
 DEFAULT_VISUALIZE = True
 DEFAULT_SHOW_UNIONS_IN_VIEWER = True
@@ -141,6 +152,112 @@ def points_inside_spheroids(points, centers, orientations, dimensions):
         scaled = local / np.asarray(dims, dtype=float)
         inside |= np.einsum("ij,ij->i", scaled, scaled) <= 1.0
     return inside
+
+
+def floating_cluster_mask(centers, radius, min_cluster_size):
+    """Boolean mask keeping only spheres in clusters of >= min_cluster_size.
+
+    Two equal-radius spheres are connected when their centers are within
+    2 * radius (touching or overlapping). Connected components of that graph
+    are the physical aggregates; isolated spheres or tiny groups floating in
+    the matrix are not realistic and can be dropped.
+
+    Args:
+        centers (np.ndarray): (N, 3) sphere centers.
+        radius (float): Common sphere radius.
+        min_cluster_size (int): Minimum number of spheres a cluster needs to
+            be kept.
+
+    Returns:
+        np.ndarray: Boolean mask of shape (N,), True for spheres to keep.
+    """
+    centers = np.asarray(centers, dtype=float)
+    n = centers.shape[0]
+    if n == 0 or int(min_cluster_size) <= 1:
+        return np.ones(n, dtype=bool)
+
+    tree = cKDTree(centers)
+    pairs = tree.query_pairs(2.0 * float(radius), output_type="ndarray")
+    if pairs.size:
+        adjacency = coo_matrix(
+            (np.ones(len(pairs), dtype=np.uint8), (pairs[:, 0], pairs[:, 1])),
+            shape=(n, n),
+        )
+    else:
+        adjacency = coo_matrix((n, n))
+    n_components, labels = connected_components(adjacency, directed=False)
+    cluster_sizes = np.bincount(labels, minlength=n_components)
+    return cluster_sizes[labels] >= int(min_cluster_size)
+
+
+def fill_enclosed_occlusions_3d(phase, max_voxels=DEFAULT_MAX_OCCLUSION_VOXELS, periodic=DEFAULT_OCCLUSION_PERIODIC):
+    """Fill small enclosed matrix pockets inside filler in a voxel phase tensor.
+
+    3D counterpart of smooth_2d_occlusions.fill_enclosed_polymer_occlusions:
+    matrix (phase == 0) components with at most ``max_voxels`` voxels are set
+    to filler. With ``periodic=True`` components are merged across opposite
+    domain faces first (FFT solvers treat the domain as periodic, so a pocket
+    split across the boundary is still one enclosed pocket). With
+    ``periodic=False`` components touching the domain boundary are never
+    filled, mirroring the 2D utility.
+
+    Args:
+        phase (np.ndarray): 3D uint8 phase tensor, 1 = filler, 0 = matrix.
+        max_voxels (int): Largest matrix component (in voxels) to fill.
+        periodic (bool): Treat the domain as periodic when finding components.
+
+    Returns:
+        tuple: (phase, n_filled) where phase is a new array if anything was
+        filled (the input otherwise) and n_filled counts the filled voxels.
+    """
+    phase = np.asarray(phase, dtype=np.uint8)
+    matrix = phase == 0
+    labels, n_labels = ndimage.label(matrix)
+    if n_labels == 0:
+        return phase, 0
+
+    if periodic:
+        # Merge labels that touch each other across opposite faces. Node 0 is
+        # the filler background; no edges reference it, so it stays alone in
+        # its own component and keeps a unique id after relabeling.
+        edges = []
+        for axis in range(3):
+            lo = np.take(labels, 0, axis=axis).ravel()
+            hi = np.take(labels, -1, axis=axis).ravel()
+            both = (lo > 0) & (hi > 0)
+            if both.any():
+                edges.append(np.stack([lo[both], hi[both]], axis=1))
+        if edges:
+            edges = np.unique(np.concatenate(edges), axis=0)
+            adjacency = coo_matrix(
+                (np.ones(len(edges), dtype=np.uint8), (edges[:, 0], edges[:, 1])),
+                shape=(n_labels + 1, n_labels + 1),
+            )
+        else:
+            adjacency = coo_matrix((n_labels + 1, n_labels + 1))
+        n_ids, remap = connected_components(adjacency, directed=False)
+        labels = remap[labels]
+        background_id = int(remap[0])
+    else:
+        n_ids = n_labels + 1
+        background_id = 0
+
+    sizes = np.bincount(labels.ravel(), minlength=n_ids)
+    fillable = sizes <= int(max_voxels)
+    fillable[background_id] = False
+    if not periodic:
+        # Components reaching any domain face are open to the outside, not
+        # enclosed pockets.
+        for axis in range(3):
+            fillable[np.unique(np.take(labels, 0, axis=axis))] = False
+            fillable[np.unique(np.take(labels, -1, axis=axis))] = False
+
+    fill_mask = fillable[labels]
+    n_filled = int(np.count_nonzero(fill_mask))
+    if n_filled:
+        phase = phase.copy()
+        phase[fill_mask] = 1
+    return phase, n_filled
 
 
 def _resolve_save_dir(save_dir):
@@ -570,6 +687,37 @@ def _build_parser():
         metavar=("NX", "NY", "NZ"),
         help="Grid size for voxel export.",
     )
+    parser.add_argument(
+        "--remove-floating-clusters",
+        action="store_true",
+        default=DEFAULT_REMOVE_FLOATING_CLUSTERS,
+        help="Drop spheres in clusters smaller than --min-cluster-size before saving/voxelization.",
+    )
+    parser.add_argument(
+        "--min-cluster-size",
+        type=int,
+        default=DEFAULT_MIN_CLUSTER_SIZE,
+        help="Minimum sphere count for a cluster to be kept.",
+    )
+    parser.add_argument(
+        "--fill-occlusions",
+        action="store_true",
+        default=DEFAULT_FILL_OCCLUSIONS,
+        help="Fill small enclosed matrix pockets in the voxelized structure.",
+    )
+    parser.add_argument(
+        "--max-occlusion-voxels",
+        type=int,
+        default=DEFAULT_MAX_OCCLUSION_VOXELS,
+        help="Largest matrix pocket (in voxels) that gets filled.",
+    )
+    parser.add_argument(
+        "--occlusion-non-periodic",
+        dest="occlusion_periodic",
+        action="store_false",
+        default=DEFAULT_OCCLUSION_PERIODIC,
+        help="Treat the domain as non-periodic when detecting enclosed pockets.",
+    )
     parser.add_argument("--notes", default=DEFAULT_NOTES, help="Optional notes metadata stored in npz outputs.")
     parser.add_argument(
         "--no-visualize",
@@ -677,6 +825,7 @@ def generate_and_save(
     model2_cfg = params.get("model2", {}) or {}
     model3_cfg = params.get("model3", {}) or {}
     outputs = params.get("outputs", {}) or {}
+    cleanup_cfg = params.get("cleanup", {}) or {}
     seed = params.get("seed", DEFAULT_SEED)
     save_dir = params.get("output_dir", DEFAULT_SAVE_DIR)
     voxel_grid = tuple(params.get("voxel_grid", DEFAULT_VOXEL_GRID_SHAPE))
@@ -737,6 +886,19 @@ def generate_and_save(
     # Get the filtered points
     filtered_points = model1_points[final_mask]
 
+    # Optionally drop floating spheres / tiny groups not attached to a larger
+    # aggregate. Done before meshing, voxelization and PHR so every saved
+    # output reflects the cleaned structure.
+    n_removed_floaters = 0
+    if cleanup_cfg.get("remove_floating_clusters", DEFAULT_REMOVE_FLOATING_CLUSTERS):
+        keep = floating_cluster_mask(
+            filtered_points,
+            model1.radius,
+            cleanup_cfg.get("min_cluster_size", DEFAULT_MIN_CLUSTER_SIZE),
+        )
+        n_removed_floaters = int(np.count_nonzero(~keep))
+        filtered_points = filtered_points[keep]
+
     # Union meshes are only needed for optional visualization / .vtp export.
     need_union_meshes = return_meshes or outputs.get("save_union_vtp", DEFAULT_SAVE_UNION_VTP)
     union2 = create_union_of_bodies(model2_particles) if need_union_meshes else None
@@ -753,6 +915,17 @@ def generate_and_save(
         box_size=box_size,
         voxel_grid_shape=voxel_grid,
     )
+
+    # Optionally fill tiny enclosed matrix pockets inside the voxelized
+    # aggregates, before PHR is computed so the filename/manifest match.
+    n_filled_voxels = 0
+    if cleanup_cfg.get("fill_occlusions", DEFAULT_FILL_OCCLUSIONS):
+        phase, n_filled_voxels = fill_enclosed_occlusions_3d(
+            phase,
+            max_voxels=cleanup_cfg.get("max_occlusion_voxels", DEFAULT_MAX_OCCLUSION_VOXELS),
+            periodic=cleanup_cfg.get("periodic", DEFAULT_OCCLUSION_PERIODIC),
+        )
+
     filler_fraction, phr = _phr_from_phase(phase, box_size, filler_density, rubber_density)
 
     # Resolve the final filename (may embed the PHR value) now that PHR is known.
@@ -802,6 +975,8 @@ def generate_and_save(
         "saved_paths": saved_paths,
         "n_points": int(len(model1_points)),
         "n_final": int(len(filtered_points)),
+        "n_removed_floaters": n_removed_floaters,
+        "n_filled_voxels": n_filled_voxels,
         "filler_fraction": filler_fraction,
         "phr": phr,
         "status": status,
@@ -809,9 +984,14 @@ def generate_and_save(
     }
 
     if verbose and status == "generated":
+        cleanup_note = ""
+        if n_removed_floaters or n_filled_voxels:
+            cleanup_note = ", removed {} floaters, filled {} voxels".format(
+                n_removed_floaters, n_filled_voxels
+            )
         print(
-            "[{}] final {} spheres, phr={:.2f} ({:.1f}s)".format(
-                name, result["n_final"], phr, result["elapsed"]
+            "[{}] final {} spheres, phr={:.2f}{} ({:.1f}s)".format(
+                name, result["n_final"], phr, cleanup_note, result["elapsed"]
             )
         )
 
@@ -840,6 +1020,13 @@ def _params_from_args(args):
             "save_union_vtp": args.save_union_vtp,
             "save_spheres_npz": args.save_spheres_npz,
             "save_voxel_npz": args.save_voxel_npz,
+        },
+        "cleanup": {
+            "remove_floating_clusters": args.remove_floating_clusters,
+            "min_cluster_size": args.min_cluster_size,
+            "fill_occlusions": args.fill_occlusions,
+            "max_occlusion_voxels": args.max_occlusion_voxels,
+            "periodic": args.occlusion_periodic,
         },
         "notes": args.notes,
         "seed": args.seed,

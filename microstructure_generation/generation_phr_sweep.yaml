@@ -43,6 +43,13 @@ defaults:
     save_particle_vtp: false    # per-particle meshes (large; usually off)
     save_union_vtp:    false
 
+  cleanup:                      # realism filters, applied before saving / PHR
+    remove_floating_clusters: true
+    min_cluster_size: 3         #   drop groups of fewer than N touching spheres
+    fill_occlusions: true
+    max_occlusion_voxels: 8     #   fill enclosed matrix pockets up to this size
+    periodic: true              #   match the FFT solver's periodic domain
+
   visualize: false              # forced off for batch generation
   notes: ""                     # free-text metadata stored in the npz files
 

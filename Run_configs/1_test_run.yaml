@@ -3,7 +3,7 @@ base_path: .
 
 experiment:
   name: 30_struct_test_run
-  output_root: Results/speed_tes
+  output_root: Results/speed_test_18_07
 
 run:
   mode: cases # cases | batch

@@ -15,7 +15,7 @@
 version: 1
 
 # Output folder, relative to the repository root (or an absolute path).
-output_dir: microstructure_generation/3D_samples/improved_struct_v1
+output_dir: microstructure_generation/3D_samples/improved_struct_v2
 
 # -----------------------------------------------------------------------------
 # defaults: baseline parameters for EVERY structure. A sweep axis or an explicit
@@ -42,6 +42,13 @@ defaults:
     save_voxel_npz:   true      # solver-ready voxel phase tensor
     save_particle_vtp: false    # per-particle meshes (large; usually off)
     save_union_vtp:    false
+
+  cleanup:                      # realism filters, applied before saving / PHR
+    remove_floating_clusters: true
+    min_cluster_size: 4         #   drop groups of fewer than N touching spheres
+    fill_occlusions: true
+    max_occlusion_voxels: 8     #   fill enclosed matrix pockets up to this size
+    periodic: true              #   match the FFT solver's periodic domain
 
   visualize: false              # forced off for batch generation
   notes: ""                     # free-text metadata stored in the npz files

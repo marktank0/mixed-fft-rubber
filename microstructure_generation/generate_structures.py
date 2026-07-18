@@ -49,7 +49,16 @@ _PARAM_COLUMNS = [
 _MANIFEST_COLUMNS = (
     ["index", "name", "seed", "status"]
     + _PARAM_COLUMNS
-    + ["n_points", "n_final", "filler_fraction", "phr", "spheres_npz", "voxel_npz"]
+    + [
+        "n_points",
+        "n_final",
+        "n_removed_floaters",
+        "n_filled_voxels",
+        "filler_fraction",
+        "phr",
+        "spheres_npz",
+        "voxel_npz",
+    ]
 )
 
 
@@ -95,6 +104,8 @@ def _run_one(job):
         "status": result["status"],
         "n_points": result["n_points"],
         "n_final": result["n_final"],
+        "n_removed_floaters": result.get("n_removed_floaters", 0),
+        "n_filled_voxels": result.get("n_filled_voxels", 0),
         "filler_fraction": result["filler_fraction"],
         "phr": result["phr"],
         "spheres_npz": result["saved_paths"].get("spheres_npz"),

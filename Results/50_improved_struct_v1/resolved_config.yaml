@@ -1,16 +1,16 @@
 version: 1
-base_path: /home/jovyan/mixed-fft-rubber
+base_path: C:\Coding\mixed-fft-master
 mode: batch
 execution:
-  max_workers: 60
+  max_workers: 6
   log_to_file: true
   on_existing: skip
   save_resolved_config: true
 cases:
 - case_name: phr_13.23_id6_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_13.23_id6_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_13.23_id6_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -45,9 +45,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_14.18_id3_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_14.18_id3_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_14.18_id3_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -82,9 +82,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_16.38_id4_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_16.38_id4_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_16.38_id4_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -119,9 +119,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_18.02_id9_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_18.02_id9_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_18.02_id9_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -156,9 +156,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_18.14_id7_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_18.14_id7_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_18.14_id7_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -193,9 +193,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_18.52_id2_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_18.52_id2_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_18.52_id2_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -230,9 +230,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_20.42_id8_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_20.42_id8_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_20.42_id8_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -267,9 +267,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_20.73_id14_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_20.73_id14_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_20.73_id14_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -304,9 +304,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_21.45_id18_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_21.45_id18_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_21.45_id18_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -341,9 +341,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_21.54_id10_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_21.54_id10_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_21.54_id10_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -378,9 +378,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_22.13_id1_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_22.13_id1_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_22.13_id1_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -415,9 +415,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_22.75_id5_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_22.75_id5_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_22.75_id5_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -452,9 +452,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_23.70_id15_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_23.70_id15_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_23.70_id15_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -489,9 +489,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_23.97_id11_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_23.97_id11_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_23.97_id11_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -526,9 +526,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_23.97_id28_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_23.97_id28_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_23.97_id28_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -563,9 +563,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_24.35_id22_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_24.35_id22_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_24.35_id22_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -600,9 +600,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_24.78_id17_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_24.78_id17_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_24.78_id17_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -637,9 +637,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_25.39_id24_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_25.39_id24_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_25.39_id24_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -674,9 +674,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_25.66_id19_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_25.66_id19_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_25.66_id19_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -711,9 +711,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_26.42_id20_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_26.42_id20_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_26.42_id20_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -748,9 +748,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_26.65_id12_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_26.65_id12_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_26.65_id12_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -785,9 +785,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_27.11_id37_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_27.11_id37_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_27.11_id37_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -822,9 +822,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_27.16_id21_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_27.16_id21_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_27.16_id21_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -859,9 +859,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_28.24_id16_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_28.24_id16_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_28.24_id16_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -896,9 +896,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_28.42_id27_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_28.42_id27_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_28.42_id27_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -933,9 +933,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_28.48_id13_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_28.48_id13_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_28.48_id13_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -970,9 +970,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_28.85_id25_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_28.85_id25_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_28.85_id25_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1007,9 +1007,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_29.08_id38_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_29.08_id38_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_29.08_id38_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1044,9 +1044,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_30.56_id33_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_30.56_id33_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_30.56_id33_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1081,9 +1081,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_31.05_id26_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_31.05_id26_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_31.05_id26_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1118,9 +1118,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_31.86_id30_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_31.86_id30_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_31.86_id30_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1155,9 +1155,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_32.15_id36_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_32.15_id36_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_32.15_id36_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1192,9 +1192,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_32.56_id40_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_32.56_id40_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_32.56_id40_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1229,9 +1229,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_32.87_id31_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_32.87_id31_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_32.87_id31_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1266,9 +1266,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_33.07_id39_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_33.07_id39_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_33.07_id39_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1303,9 +1303,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_33.49_id29_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_33.49_id29_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_33.49_id29_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1340,9 +1340,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_35.09_id49_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_35.09_id49_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_35.09_id49_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1377,9 +1377,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_35.60_id47_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_35.60_id47_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_35.60_id47_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1414,9 +1414,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_35.72_id35_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_35.72_id35_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_35.72_id35_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1451,9 +1451,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_36.59_id50_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_36.59_id50_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_36.59_id50_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1488,9 +1488,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_36.85_id43_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_36.85_id43_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_36.85_id43_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1525,9 +1525,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_37.31_id44_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_37.31_id44_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_37.31_id44_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1562,9 +1562,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_37.86_id46_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_37.86_id46_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_37.86_id46_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1599,9 +1599,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_38.55_id23_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_38.55_id23_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_38.55_id23_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1636,9 +1636,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_38.62_id41_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_38.62_id41_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_38.62_id41_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1673,9 +1673,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_38.98_id32_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_38.98_id32_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_38.98_id32_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1710,9 +1710,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_39.20_id48_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_39.20_id48_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_39.20_id48_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1747,9 +1747,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_45.83_id42_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_45.83_id42_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_45.83_id42_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1784,9 +1784,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_47.15_id34_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_47.15_id34_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_47.15_id34_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
@@ -1821,9 +1821,9 @@ cases:
   field_filename: fields.vti
   log_to_file: true
 - case_name: phr_50.64_id45_voxel
-  structure_path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/phr_50.64_id45_voxel.npz
-  charge_path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-100x.txt
-  output_path: /home/jovyan/mixed-fft-rubber/Results/50_improved_struct_v1
+  structure_path: C:\Coding\mixed-fft-master\microstructure_generation\3D_samples\improved_struct_v1\voxel_structures\phr_50.64_id45_voxel.npz
+  charge_path: C:\Coding\mixed-fft-master\3D_samples\Charges\Neo_1.0_E10-100x.txt
+  output_path: C:\Coding\mixed-fft-master\Results\50_improved_struct_v1
   N: 63
   incre_list:
   - 0.05
