@@ -232,6 +232,7 @@ class FFTSolver:
         max_newton=15,
         max_backtracks=8,
         min_substep_ratio=1.0/16.0,
+        gmres_restart=None,
     ):
         """ """
         #
@@ -243,6 +244,11 @@ class FFTSolver:
         num_up = ndim*ndim*N*N*N
         num_down = N*N*N
         num_tol = num_up + num_down
+        #
+        if gmres_restart is None:
+            # cap the GMRES basis at ~800 MB; 100 at N=31, ~40 at N=63
+            gmres_restart = int(min(100, max(20, 8.e8/(8.0*num_tol))))
+        print("gmres restart length: {}".format(gmres_restart))
         #
         if not len(incre_list):
             incre_list = [0.1 for k in range(increment-1)]
@@ -416,7 +422,7 @@ class FFTSolver:
                 gmres_callback = self.__gmres_progress_counter(label="gmres")
                 dX,flag = sp.gmres(rtol=1.e-6, atol=1.e-10,
                   A = Aop, b = b, M = Mop, callback=gmres_callback,
-                  callback_type="pr_norm", restart=100, maxiter=1000,
+                  callback_type="pr_norm", restart=gmres_restart, maxiter=1000,
                 )
             else:
                 cg_callback = self.__progress_counter(KdX, b, label="cg")
@@ -524,8 +530,9 @@ class FFTSolver:
         F = np.array(eyeMat,copy=True)
         YALI = np.zeros([N,N,N])
         #
+        self.solver_status = "in_progress"
         self.solver_stats = {
-            "status": None,
+            "status": "in_progress",
             "tol_rel": tol_rel,
             "tol_abs": tol_abs,
             "max_newton": max_newton,
@@ -597,6 +604,13 @@ class FFTSolver:
             print("now F is...")
             print(Favg)
             #
+            # incremental save so an interrupted or failed run keeps
+            # everything up to the last completed increment boundary
+            if savemodel == "normal" or savemodel == "both":
+                self.__save_F_P(self.path)
+                self.__save_stats(self.path)
+                print("intermediate results saved ({} increments in output.csv)".format(len(self.Ps)))
+            #
         #-------------------------------post
         if failed:
             self.solver_status = "failed"
@@ -611,6 +625,7 @@ class FFTSolver:
             print("finish!")
         self.solver_stats["status"] = self.solver_status
         self.__save_stats(self.path)
+        print("solver stats are saved to solver_stats.json")
         #
         #
         if savemodel == "normal" or savemodel == "both":
@@ -631,7 +646,6 @@ class FFTSolver:
         outfile = os.path.join(path, "solver_stats.json")
         with open(outfile, "w") as file:
             json.dump(self.solver_stats, file, indent=1, default=float)
-        print("solver stats are saved to solver_stats.json")
 
     def __save_F_P(self,path):
         #

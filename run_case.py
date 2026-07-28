@@ -33,6 +33,10 @@ def _run_case_impl(case):
     phase_path = case.get("phase_path")
     phase_key = _case_value(case, "phase_key", "phase")
     output_name = case.get("output_name")
+    max_newton = _case_value(case, "max_newton", 15)
+    min_substep_ratio = _case_value(case, "min_substep_ratio", 1.0/16.0)
+    tol_rel = _case_value(case, "tol_rel", 1.e-5)
+    gmres_restart = case.get("gmres_restart")
 
     print(structure_path)
     start_time = time.time()
@@ -53,6 +57,10 @@ def _run_case_impl(case):
         diagnostics=diagnostics,
         save_fields=save_fields,
         field_filename=field_filename,
+        max_newton=max_newton,
+        min_substep_ratio=min_substep_ratio,
+        tol_rel=tol_rel,
+        gmres_restart=gmres_restart,
     )
     solve_time = time.time() - start_time
 
@@ -102,7 +110,8 @@ def run_case(case):
         output_run_path(case["structure_path"], case.get("output_path"), case.get("output_name"))
     )
     log_path = os.path.join(output_path, "run.log")
-    with open(log_path, "w") as log_file:
+    # line-buffered so the log can be followed while the case is running
+    with open(log_path, "w", buffering=1) as log_file:
         with contextlib.redirect_stdout(log_file), contextlib.redirect_stderr(log_file):
             result = _run_case_impl(case)
     result["log_file"] = log_path
