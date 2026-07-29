@@ -21,8 +21,8 @@ from file_viewers.view_npz_3d import view_npz_file
 
 # Default run settings
 # Edit these values to change the defaults used by the CLI and helper functions.
-DEFAULT_FILENAME_BASE = "seed_5"
-DEFAULT_SAVE_DIR = "microstructure_generation/3D_samples/occlusion_unfilled"
+DEFAULT_FILENAME_BASE = "2r_filled"
+DEFAULT_SAVE_DIR = "microstructure_generation/3D_samples/different_fillings"
 DEFAULT_BOX_SIZE = 3.0
 
 '''
@@ -67,6 +67,10 @@ DEFAULT_MIN_CLUSTER_SIZE = 4
 DEFAULT_FILL_OCCLUSIONS = True
 DEFAULT_MAX_OCCLUSION_VOXELS = 9
 DEFAULT_OCCLUSION_PERIODIC = True
+# Radius (in voxels) of the morphological closing that seals thin matrix
+# channels through aggregates; gaps up to ~2*radius voxels wide are closed.
+# 0 disables the step.
+DEFAULT_CLOSING_RADIUS = 2
 
 DEFAULT_VISUALIZE = True
 DEFAULT_SHOW_UNIONS_IN_VIEWER = True
@@ -188,6 +192,53 @@ def floating_cluster_mask(centers, radius, min_cluster_size):
     n_components, labels = connected_components(adjacency, directed=False)
     cluster_sizes = np.bincount(labels, minlength=n_components)
     return cluster_sizes[labels] >= int(min_cluster_size)
+
+
+def close_thin_channels_3d(phase, closing_radius=DEFAULT_CLOSING_RADIUS, periodic=DEFAULT_OCCLUSION_PERIODIC):
+    """Seal thin matrix channels through filler with a morphological closing.
+
+    3D counterpart of the closing step in smooth_2d_occlusions: the filler
+    phase is dilated by ``closing_radius`` voxels and eroded back, which fills
+    matrix gaps up to ~2 * closing_radius voxels wide (through-channels
+    included, unlike the enclosed-pocket filler) while leaving the outer
+    aggregate shape unchanged. Run this BEFORE fill_enclosed_occlusions_3d:
+    closing a channel's mouths can turn its interior into a sealed pocket the
+    pocket filler then removes.
+
+    Args:
+        phase (np.ndarray): 3D uint8 phase tensor, 1 = filler, 0 = matrix.
+        closing_radius (int): Half-width of the closing structuring element in
+            voxels; 0 disables the step.
+        periodic (bool): Wrap across domain faces so gaps spanning the
+            boundary close the same way as interior ones.
+
+    Returns:
+        tuple: (phase, n_closed) where phase is a new array if anything was
+        closed (the input otherwise) and n_closed counts the added voxels.
+    """
+    phase = np.asarray(phase, dtype=np.uint8)
+    radius = int(closing_radius)
+    if radius <= 0:
+        return phase, 0
+
+    filler = phase > 0
+    structure = np.ones((2 * radius + 1,) * 3, dtype=bool)
+    if periodic:
+        # A closing's region of influence extends 2*radius past a voxel, so a
+        # wrap-pad of that width makes the boundary behave like the interior.
+        pad = 2 * radius
+        padded = np.pad(filler, pad, mode="wrap")
+        closed = ndimage.binary_closing(padded, structure=structure)
+        closed = closed[pad:-pad, pad:-pad, pad:-pad]
+    else:
+        closed = ndimage.binary_closing(filler, structure=structure)
+
+    added = closed & ~filler
+    n_closed = int(np.count_nonzero(added))
+    if n_closed:
+        phase = phase.copy()
+        phase[added] = 1
+    return phase, n_closed
 
 
 def fill_enclosed_occlusions_3d(phase, max_voxels=DEFAULT_MAX_OCCLUSION_VOXELS, periodic=DEFAULT_OCCLUSION_PERIODIC):
@@ -700,6 +751,12 @@ def _build_parser():
         help="Minimum sphere count for a cluster to be kept.",
     )
     parser.add_argument(
+        "--closing-radius",
+        type=int,
+        default=DEFAULT_CLOSING_RADIUS,
+        help="Morphological closing radius (voxels) sealing thin matrix channels; 0 disables.",
+    )
+    parser.add_argument(
         "--fill-occlusions",
         action="store_true",
         default=DEFAULT_FILL_OCCLUSIONS,
@@ -916,8 +973,19 @@ def generate_and_save(
         voxel_grid_shape=voxel_grid,
     )
 
-    # Optionally fill tiny enclosed matrix pockets inside the voxelized
-    # aggregates, before PHR is computed so the filename/manifest match.
+    # Optionally seal thin matrix channels through aggregates (morphological
+    # closing), then fill tiny enclosed matrix pockets, before PHR is computed
+    # so the filename/manifest match. Closing runs first: sealing a channel's
+    # mouths can turn its interior into a pocket the filler then removes.
+    n_closed_voxels = 0
+    closing_radius = int(cleanup_cfg.get("closing_radius", DEFAULT_CLOSING_RADIUS))
+    if closing_radius > 0:
+        phase, n_closed_voxels = close_thin_channels_3d(
+            phase,
+            closing_radius=closing_radius,
+            periodic=cleanup_cfg.get("periodic", DEFAULT_OCCLUSION_PERIODIC),
+        )
+
     n_filled_voxels = 0
     if cleanup_cfg.get("fill_occlusions", DEFAULT_FILL_OCCLUSIONS):
         phase, n_filled_voxels = fill_enclosed_occlusions_3d(
@@ -976,6 +1044,7 @@ def generate_and_save(
         "n_points": int(len(model1_points)),
         "n_final": int(len(filtered_points)),
         "n_removed_floaters": n_removed_floaters,
+        "n_closed_voxels": n_closed_voxels,
         "n_filled_voxels": n_filled_voxels,
         "filler_fraction": filler_fraction,
         "phr": phr,
@@ -985,9 +1054,9 @@ def generate_and_save(
 
     if verbose and status == "generated":
         cleanup_note = ""
-        if n_removed_floaters or n_filled_voxels:
-            cleanup_note = ", removed {} floaters, filled {} voxels".format(
-                n_removed_floaters, n_filled_voxels
+        if n_removed_floaters or n_closed_voxels or n_filled_voxels:
+            cleanup_note = ", removed {} floaters, closed {} + filled {} voxels".format(
+                n_removed_floaters, n_closed_voxels, n_filled_voxels
             )
         print(
             "[{}] final {} spheres, phr={:.2f}{} ({:.1f}s)".format(
@@ -1024,6 +1093,7 @@ def _params_from_args(args):
         "cleanup": {
             "remove_floating_clusters": args.remove_floating_clusters,
             "min_cluster_size": args.min_cluster_size,
+            "closing_radius": args.closing_radius,
             "fill_occlusions": args.fill_occlusions,
             "max_occlusion_voxels": args.max_occlusion_voxels,
             "periodic": args.occlusion_periodic,

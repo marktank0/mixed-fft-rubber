@@ -46,6 +46,7 @@ defaults:
   cleanup:                      # realism filters, applied before saving / PHR
     remove_floating_clusters: true
     min_cluster_size: 3         #   drop groups of fewer than N touching spheres
+    closing_radius: 1           #   seal matrix channels up to ~2*r voxels wide (0 = off)
     fill_occlusions: true
     max_occlusion_voxels: 8     #   fill enclosed matrix pockets up to this size
     periodic: true              #   match the FFT solver's periodic domain

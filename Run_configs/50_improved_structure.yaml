@@ -3,7 +3,7 @@ base_path: . #/home/jovyan/mixed-fft-rubber/
 
 experiment:
   name: 50_struct_test_run
-  output_root: Results/50_improved_struct_v3
+  output_root: Results/50_improved_struct_v4
 
 run:
   mode: batch # cases | batch
@@ -46,11 +46,11 @@ defaults:
     field_filename: fields.vti
 
   charge:
-    path: 3D_samples/Charges/Neo_1.0_E10-100x.txt
+    path: 3D_samples/Charges/Neo_1.0_E10-2500.txt
 
 batch:
   structures:
-    glob: microstructure_generation/3D_samples/improved_struct_v1/voxel_structures/*.npz
+    glob: microstructure_generation/3D_samples/improved_struct_v2/voxel_structures/*.npz
     sort: name
     include: ["*_voxel.npz"]
     exclude: ["test_*"]
