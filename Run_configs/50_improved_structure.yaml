@@ -29,6 +29,10 @@ defaults:
     preconditioner: reference
     diagnostics: false
     savemodel: normal
+    max_newton: 100
+    min_substep_ratio: 0.125
+    #tol_rel: 
+    gmres_restart: 800 #MB
 
   phases:
     matrix_phase: 0

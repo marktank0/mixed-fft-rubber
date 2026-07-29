@@ -3,11 +3,7 @@ base_path: .
 
 experiment:
   name: 30_struct_test_run
-<<<<<<< HEAD
-  output_root: Results/speed_test_18_07
-=======
-  output_root: Results/speed_test_18_07_higher_contrast
->>>>>>> FFT_for_higher_contrast
+  output_root: Results/speed_test_18_07_new_solver
 
 run:
   mode: cases # cases | batch
@@ -33,6 +29,10 @@ defaults:
     preconditioner: reference
     diagnostics: false
     savemodel: normal
+    max_newton: 100
+    min_substep_ratio: 0.125
+    #tol_rel: 
+    gmres_restart: 800 #MB
 
   phases:
     matrix_phase: 0
@@ -56,9 +56,5 @@ batch:
     exclude: ["test_*"]
 
 cases:
-<<<<<<< HEAD
   - name: one_voxel
-=======
-  - name: one_voxel_higher_contrast_branch
->>>>>>> FFT_for_higher_contrast
     structure_path: 3D_samples/voxels/1_voxel.npz
