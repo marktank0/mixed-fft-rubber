@@ -1,22 +1,25 @@
 # -*- coding: utf-8 -*-
 """Reference-operator preconditioners for FFT-Galerkin linear solves."""
 
+import os
+
 import numpy as np
 import scipy.fft
 
 _AXES = (1, 2, 3)
+_FFT_WORKERS = int(os.environ.get("FFT_WORKERS", "1"))
 
 
 def _fft_field(field):
     return np.fft.fftshift(
-        scipy.fft.fftn(np.fft.ifftshift(field, axes=_AXES), axes=_AXES, workers=-1),
+        scipy.fft.fftn(np.fft.ifftshift(field, axes=_AXES), axes=_AXES, workers=_FFT_WORKERS),
         axes=_AXES,
     )
 
 
 def _ifft_field(field_hat):
     return np.fft.fftshift(
-        scipy.fft.ifftn(np.fft.ifftshift(field_hat, axes=_AXES), axes=_AXES, workers=-1),
+        scipy.fft.ifftn(np.fft.ifftshift(field_hat, axes=_AXES), axes=_AXES, workers=_FFT_WORKERS),
         axes=_AXES,
     ).real
 

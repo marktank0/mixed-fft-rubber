@@ -32,6 +32,8 @@ from fg.preconditioning import (
 )
 from fg.vtk_export import save_vti_cell_fields, solution_fields
 
+_FFT_WORKERS = int(os.environ.get("FFT_WORKERS", "1"))
+
 class Problem:
     """ problem definitions """
     def __init__(self, path):
@@ -264,8 +266,8 @@ class FFTSolver:
         # shifts act on the spatial axes only (component axes are untouched
         # by the transform, so shifting them cancelled out anyway)
         axes = (-3, -2, -1)
-        fft    = lambda x  : np.fft.fftshift(scipy.fft.fftn (np.fft.ifftshift(x, axes=axes), axes=axes, workers=-1), axes=axes)
-        ifft   = lambda x  : np.fft.fftshift(scipy.fft.ifftn(np.fft.ifftshift(x, axes=axes), axes=axes, workers=-1), axes=axes)
+        fft    = lambda x  : np.fft.fftshift(scipy.fft.fftn (np.fft.ifftshift(x, axes=axes), axes=axes, workers=_FFT_WORKERS), axes=axes)
+        ifft   = lambda x  : np.fft.fftshift(scipy.fft.ifftn(np.fft.ifftshift(x, axes=axes), axes=axes, workers=_FFT_WORKERS), axes=axes)
         #
         G      = lambda A2 : np.real( ifft( ddot42(Ghat4,fft(A2)))).reshape(-1)
         #

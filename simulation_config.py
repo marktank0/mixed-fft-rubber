@@ -18,6 +18,7 @@ THREAD_ENV_DEFAULTS = {
     "OPENBLAS_NUM_THREADS": "1",
     "MKL_NUM_THREADS": "1",
     "NUMEXPR_NUM_THREADS": "1",
+    "FFT_WORKERS": "1",
 }
 
 SUPPORTED_MODES = ("cases", "batch")
