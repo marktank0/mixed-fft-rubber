@@ -3,13 +3,13 @@ base_path: . #/home/jovyan/mixed-fft-rubber/
 
 experiment:
   name: 50_struct_test_run
-  output_root: Results/50_improved_struct_v1
+  output_root: Results/50_improved_struct_v3
 
 run:
   mode: batch # cases | batch
 
 execution:
-  max_workers: 6
+  max_workers: 60
   log_to_file: true
   on_existing: skip # skip | overwrite | error
   save_resolved_config: true
@@ -24,15 +24,15 @@ defaults:
     type: mixed
     N: 63
     increments:
-      repeat: 20
-      value: 0.05
+      repeat: 10
+      value: 0.10
     preconditioner: reference
     diagnostics: false
     savemodel: normal
     max_newton: 100
     min_substep_ratio: 0.125
     #tol_rel: 
-    gmres_restart: 800 #MB
+    gmres_restart: 2400 #MB
 
   phases:
     matrix_phase: 0

@@ -1,0 +1,40 @@
+{
+ "status": "in_progress",
+ "tol_rel": 1e-05,
+ "tol_abs": 1e-10,
+ "max_newton": 100,
+ "preconditioner": "reference",
+ "step_cuts": 0,
+ "increments": [
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    22,
+    26,
+    29
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    790.1563601177502,
+    42.8546568967569,
+    0.17916817802470117,
+    1.258536303199877e-05
+   ],
+   "residual_p": [
+    50.00469977912127,
+    1.304375379708372,
+    0.007689821860699483,
+    1.6674023983599282e-06
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.0,
+   "converged": true,
+   "time_seconds": 266.7491602897644
+  }
+ ]
+}
