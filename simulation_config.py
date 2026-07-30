@@ -268,7 +268,7 @@ def _normalize_case(config, raw_case, base_path, execution):
         "preconditioner": solver.get("preconditioner", "reference"),
         "diagnostics": bool(solver.get("diagnostics", False)),
         "savemodel": solver.get("savemodel", "normal"),
-        "max_newton": int(solver.get("max_newton", 15)),
+        "max_gmres_iter": int(solver.get("max_gmres_iter", 1000)),
         "min_substep_ratio": float(solver.get("min_substep_ratio", 1.0/16.0)),
         "tol_rel": float(solver.get("tol_rel", 1.e-5)),
         "gmres_restart": solver.get("gmres_restart"),

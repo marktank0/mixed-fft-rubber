@@ -231,7 +231,7 @@ class FFTSolver:
         field_filename="fields.vti",
         tol_rel=1.e-5,
         tol_abs=1.e-10,
-        max_newton=15,
+        max_gmres_iter=1000,
         max_backtracks=8,
         min_substep_ratio=1.0/16.0,
         gmres_restart=None,
@@ -422,14 +422,19 @@ class FFTSolver:
                 )
             if preconditioner in ("gmres", "reference"):
                 gmres_callback = self.__gmres_progress_counter(label="gmres")
+                # scipy's maxiter counts restart cycles, not iterations, so
+                # convert the total-iteration cap to whole cycles
+                restart_cycles = max(1, int(np.ceil(max_gmres_iter/float(gmres_restart))))
                 dX,flag = sp.gmres(rtol=1.e-6, atol=1.e-10,
                   A = Aop, b = b, M = Mop, callback=gmres_callback,
-                  callback_type="pr_norm", restart=gmres_restart, maxiter=1000,
+                  callback_type="pr_norm", restart=gmres_restart,
+                  maxiter=restart_cycles,
                 )
             else:
                 cg_callback = self.__progress_counter(KdX, b, label="cg")
                 dX,flag = sp.cg(rtol=1.e-6, atol=1.e-10,
                   A = Aop, b = b, callback=cg_callback,
+                  maxiter=max_gmres_iter,
                 )
             if diagnostics:
                 print_linear_diagnostics(dX, Mop, b)
@@ -473,15 +478,12 @@ class FFTSolver:
                         and res_p <= max(tol_rel*ref_p, tol_abs))
 
             while not is_converged():
-                if stats["newton_iterations"] >= max_newton:
-                    stats["fail_reason"] = "max_newton"
-                    return False, F, YALI, P, stats
-                #
                 dX, flag, Mop = solve_linear(b)
                 stats["krylov_iterations"].append(self.iter_num)
                 if flag > 0:
-                    stats["fail_reason"] = "krylov_flag_{}".format(flag)
-                    print("linear solver did not converge (flag {})".format(flag))
+                    stats["fail_reason"] = "gmres_iteration_cap"
+                    print("linear solver hit the iteration cap ({} iterations, flag {})".format(
+                        self.iter_num, flag))
                     return False, F, YALI, P, stats
                 dFm, dYL = np.split(dX, [num_up])
                 dF = dFm.reshape(ndim,ndim,N,N,N)
@@ -537,7 +539,7 @@ class FFTSolver:
             "status": "in_progress",
             "tol_rel": tol_rel,
             "tol_abs": tol_abs,
-            "max_newton": max_newton,
+            "max_gmres_iter": max_gmres_iter,
             "preconditioner": preconditioner,
             "step_cuts": 0,
             "increments": [],

@@ -2,16 +2,16 @@ version: 1
 base_path: .
 
 experiment:
-  name: 30_struct_test_run
-  output_root: Results/speed_test_18_07_new_solver
+  name: different_filling_settings
+  output_root: Results/different_filling_settings
 
 run:
   mode: cases # cases | batch
 
 execution:
-  max_workers: 1
+  max_workers: 4
   log_to_file: true
-  on_existing: skip # skip | overwrite | error
+  on_existing: overwrite # skip | overwrite | error
   save_resolved_config: true
   thread_env:
     OMP_NUM_THREADS: 1
@@ -23,7 +23,7 @@ execution:
 defaults:
   solver:
     type: mixed
-    N: 31
+    N: 63
     increments:
       repeat: 10
       value: 0.1
@@ -33,7 +33,7 @@ defaults:
     max_newton: 100
     min_substep_ratio: 0.125
     #tol_rel: 
-    gmres_restart: 800 #MB
+    # gmres_restart: 40 # Num of vectors
 
   phases:
     matrix_phase: 0
@@ -47,7 +47,7 @@ defaults:
     field_filename: fields.vti
 
   charge:
-    path: 3D_samples/Charges/Neo_0.5_E10-5000x.txt
+    path: 3D_samples/Charges/Neo_1.0_E10-100.txt
 
 batch:
   structures:
@@ -57,5 +57,11 @@ batch:
     exclude: ["test_*"]
 
 cases:
-  - name: one_voxel
-    structure_path: 3D_samples/voxels/1_voxel.npz
+  - name: unfilled
+    structure_path: microstructure_generation\3D_samples\different_fillings\unfilled_voxel.npz
+
+  - name: 1r_filled
+    structure_path: microstructure_generation\3D_samples\different_fillings\1r_filled_voxel.npz
+
+  - name: 2r_filled
+    structure_path: microstructure_generation\3D_samples\different_fillings\2r_filled_voxel.npz

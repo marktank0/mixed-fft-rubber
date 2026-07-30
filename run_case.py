@@ -33,7 +33,7 @@ def _run_case_impl(case):
     phase_path = case.get("phase_path")
     phase_key = _case_value(case, "phase_key", "phase")
     output_name = case.get("output_name")
-    max_newton = _case_value(case, "max_newton", 15)
+    max_gmres_iter = _case_value(case, "max_gmres_iter", 1000)
     min_substep_ratio = _case_value(case, "min_substep_ratio", 1.0/16.0)
     tol_rel = _case_value(case, "tol_rel", 1.e-5)
     gmres_restart = case.get("gmres_restart")
@@ -57,7 +57,7 @@ def _run_case_impl(case):
         diagnostics=diagnostics,
         save_fields=save_fields,
         field_filename=field_filename,
-        max_newton=max_newton,
+        max_gmres_iter=max_gmres_iter,
         min_substep_ratio=min_substep_ratio,
         tol_rel=tol_rel,
         gmres_restart=gmres_restart,

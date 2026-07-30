@@ -153,12 +153,26 @@ because a *stalled* Krylov solve returns a small (wrong) step - so the
 old test could report convergence precisely when the linear solver had
 failed.
 
-A Krylov failure (`flag > 0`) is now never accepted: it marks the
-sub-increment as failed, which triggers load-step cutting (Section 4).
-If cutting is exhausted the case ends with status `"failed"`; nothing
-non-equilibrated is ever written as a result. The Newton iteration count
-per sub-increment is capped by `max_newton` (default 15, configurable,
-Section 6).
+A Krylov failure is now never accepted: when GMRES fails to converge
+within the configurable iteration cap (`max_gmres_iter`, Section 6), the
+sub-increment is marked failed, which triggers load-step cutting
+(Section 4). If cutting is exhausted the case ends with status
+`"failed"`; nothing non-equilibrated is ever written as a result.
+
+The Newton iteration count itself is deliberately *not* capped: once
+each linear solve converges, Newton steps keep making progress (each
+accepted step must strictly decrease the residual), so the failure mode
+at high contrast is the linear solve, not the outer iteration. If Newton
+ever stagnates, the line search's strict-decrease requirement fails and
+routes the sub-increment into the same step-cutting path, so termination
+is still guaranteed without an explicit cap.
+
+Note on SciPy semantics: `scipy.sparse.linalg.gmres`'s `maxiter`
+argument counts *restart cycles*, not iterations. The solver therefore
+takes `max_gmres_iter` as a total inner-iteration budget (the same count
+printed as `gmres iter N` in the log) and converts it to whole restart
+cycles internally, so the effective cap is `max_gmres_iter` rounded up
+to a multiple of the restart length.
 
 **Calibration/validation.** With `tol_rel = 1e-5` the contrast-10
 regression case reproduces the pre-change results to 1e-14 relative with
@@ -294,7 +308,7 @@ The robustness knobs are plumbed through `simulation_config.py` ->
 
 | setting | default | meaning |
 |---|---|---|
-| `max_newton` | 15 | Newton iteration cap per sub-increment; exceeding it fails the sub-increment (then: step cut, or stop if cuts exhausted) |
+| `max_gmres_iter` | 1000 | total GMRES iteration cap per linear solve (rounded up to whole restart cycles); hitting it fails the sub-increment (then: step cut, or stop if cuts exhausted). Newton iterations are not capped - the linear solve is what stops converging at high contrast |
 | `min_substep_ratio` | 1/16 | smallest allowed sub-step as a fraction of the original increment; set `1.0` to disable retries entirely, i.e. "first failure stops the case" |
 | `tol_rel` | 1e-5 | relative residual tolerance per block (Section 2) |
 | `gmres_restart` | auto | GMRES restart length; auto = memory-aware (Section 7) |

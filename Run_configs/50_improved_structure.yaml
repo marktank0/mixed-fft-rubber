@@ -33,7 +33,7 @@ defaults:
     max_newton: 100
     min_substep_ratio: 0.125
     #tol_rel: 
-    gmres_restart: 2400 #MB
+    # gmres_restart: 40 #num of vectors
 
   phases:
     matrix_phase: 0
