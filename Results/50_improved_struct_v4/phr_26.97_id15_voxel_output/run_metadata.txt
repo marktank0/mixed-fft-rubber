@@ -1,0 +1,33 @@
+Created: 2026-07-29T18:45:18
+Run time seconds: 14407.471
+
+Input files
+-----------
+Structure path: /home/jovyan/mixed-fft-rubber/microstructure_generation/3D_samples/improved_struct_v2/voxel_structures/phr_26.97_id15_voxel.npz
+Charge path: /home/jovyan/mixed-fft-rubber/3D_samples/Charges/Neo_1.0_E10-500.txt
+
+Material phases
+---------------
+Phase 0 (matrix): model 1, E 10.0, poisson 0.48
+Phase 1 (filler): model 1, E 500.0, poisson 0.3
+
+Structure statistics
+--------------------
+Filler phase: 1
+Filler voxels: 30297
+Total voxels: 250047
+Filler volume fraction: 0.121165
+
+Solver settings
+---------------
+Grid N: 63
+Increments: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+Preconditioner: reference
+Diagnostics: False
+Solver status: converged
+
+Charge
+------
+dF: [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Control type: [F11 controlled, F12 controlled, F13 controlled, F21 controlled, P22 controlled, F23 controlled, F31 controlled, F32 controlled, P33 controlled]
+
