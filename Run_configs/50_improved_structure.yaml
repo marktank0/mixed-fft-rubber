@@ -2,14 +2,14 @@ version: 1
 base_path: . #/home/jovyan/mixed-fft-rubber/
 
 experiment:
-  name: 50_struct_test_run
-  output_root: Results/50_improved_struct_v4
+  name: 120_struct_test_run
+  output_root: Results/120_improved_struct_v6
 
 run:
   mode: batch # cases | batch
 
 execution:
-  max_workers: 60
+  max_workers: 120
   log_to_file: true
   on_existing: skip # skip | overwrite | error
   save_resolved_config: true
@@ -30,10 +30,10 @@ defaults:
     preconditioner: reference
     diagnostics: false
     savemodel: normal
-    max_newton: 100
-    min_substep_ratio: 0.125
+    max_gmres_iter: 600
+    min_substep_ratio: 0.25
     #tol_rel: 
-    # gmres_restart: 40 #num of vectors
+    gmres_restart: 40 #num of vectors
 
   phases:
     matrix_phase: 0
@@ -47,11 +47,11 @@ defaults:
     field_filename: fields.vti
 
   charge:
-    path: 3D_samples/Charges/Neo_1.0_E10-2500.txt
+    path: 3D_samples/Charges/Neo_1.0_E10-1000.txt
 
 batch:
   structures:
-    glob: microstructure_generation/3D_samples/improved_struct_v2/voxel_structures/*.npz
+    glob: microstructure_generation/3D_samples/improved_struct_v4/voxel_structures/*.npz
     sort: name
     include: ["*_voxel.npz"]
     exclude: ["test_*"]
