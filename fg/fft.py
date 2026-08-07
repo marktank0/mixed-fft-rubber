@@ -24,8 +24,10 @@ from fg.io_paths import (
     phase_source,
 )
 from fg.preconditioning import (
+    DISCRETIZATIONS,
     REFERENCE_MODES,
     apply_standard_reference_preconditioner,
+    build_Ghat4,
     build_standard_reference_symbol,
     reference_average,
 )
@@ -209,6 +211,7 @@ class FFTSolver:
         save_fields=False,
         field_filename="fields.vti",
         reference="mean",
+        discretization="fourier",
     ):
         """ """
         #
@@ -216,6 +219,8 @@ class FFTSolver:
             raise ValueError("Unknown preconditioner {!r}; use None or 'reference'.".format(preconditioner))
         if reference not in REFERENCE_MODES:
             raise ValueError("Unknown reference {!r}; use one of {}.".format(reference, REFERENCE_MODES))
+        if discretization not in DISCRETIZATIONS:
+            raise ValueError("Unknown discretization {!r}; use one of {}.".format(discretization, DISCRETIZATIONS))
         #
         ndim = 3
         N = self.N
@@ -228,18 +233,8 @@ class FFTSolver:
         if give_Ghat:
             Ghat4 = Ghat_given
         else:
-            freq   = np.arange(-(N-1)/2.,+(N+1)/2.)        # coordinate axis -> freq. axis
-            Ghat4  = np.zeros([ndim,ndim,ndim,ndim,N,N,N]) # zero initialize
-            # - compute
-            for i,j,l,m in itertools.product(range(ndim),repeat=4):
-                for x,y,z    in itertools.product(range(N),   repeat=3):
-                    q = np.array([freq[x], freq[y], freq[z]])  # frequency vector
-                    if not q.dot(q) == 0:                      # zero freq. -> mean
-                        Ghat4[i,j,l,m,x,y,z] = delta(i,l)*q[j]*q[m]/(q.dot(q))
-                    else:
-                        if (i,j) in self.pb.stress_control:
-                            Ghat4[i,j,l,m,x,y,z] = delta(i,l)*delta(j,m)
-        print("Ghat4 is formed...")
+            Ghat4 = build_Ghat4(N, self.pb.stress_control, ndim, discretization)
+        print("Ghat4 is formed ({} discretization)...".format(discretization))
         #
         fft    = lambda x  : np.fft.fftshift(np.fft.fftn (np.fft.ifftshift(x),[N,N,N]))
         ifft   = lambda x  : np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(x),[N,N,N]))

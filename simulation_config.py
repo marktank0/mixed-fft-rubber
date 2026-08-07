@@ -273,6 +273,7 @@ def _normalize_case(config, raw_case, base_path, execution):
         "tol_rel": float(solver.get("tol_rel", 1.e-5)),
         "gmres_restart": solver.get("gmres_restart"),
         "reference": solver.get("reference", "mean"),
+        "discretization": solver.get("discretization", "fourier"),
         "forcing": solver.get("forcing", "eisenstat_walker"),
         "inner_rtol": float(solver.get("inner_rtol", 1.e-6)),
         "eta_max": float(solver.get("eta_max", 1.e-2)),

@@ -161,8 +161,54 @@ At zero frequency, the mixed preconditioner uses the same free stress-controlled
 
 ## Known Defect: the preconditioner does not preserve the compatible subspace
 
-**This is a measured defect, not a theoretical concern.** It affects every run
-made with `preconditioner="reference"`.
+**This is a confirmed defect, established by exact rank analysis.** It affects
+every run made with `preconditioner="reference"`.
+
+### The proof
+
+The mixed Newton operator \(A\) was formed densely at \(N=7\) (contrast 100,
+\(\phi = 7.9\,\%\)) directly from `fg/mxfft.py`, and its singular values
+computed exactly:
+
+| quantity | value |
+|---|---|
+| operator size | 3430 (F-block 3087 + p-block 343) |
+| rank(\(A\)) | **1371** |
+| dim null(\(A\)) | **2059** |
+| dim of the compatible subspace (F 1028 + p 343) | **1371** |
+| rank of \(A\) restricted to the compatible subspace | **1371 of 1371 — nonsingular** |
+| smallest singular value of that restriction | 7.03e-3 (largest 4.97e2) |
+
+This says three things precisely:
+
+1. \(A\) as implemented is **massively singular** — a 2059-dimensional null
+   space out of 3430. That is expected: the F-row of \(A\) is
+   \(\mathcal{G}(\dots)\), so it only ever produces compatible output, giving
+   `rank(G)` \(\approx 3N^3\) equations for \(9N^3\) F-unknowns.
+2. Restricted to the compatible subspace, \(A\) is **exactly nonsingular**
+   (rank 1371 of 1371). The physical problem is therefore well-posed with a
+   *unique* solution — the formulation is sound.
+3. Since the restriction is injective,
+   \(\mathrm{null}(A) \cap \{\text{compatible}\} = \{0\}\). The null space is
+   entirely non-physical: it consists of incompatible F fields.
+
+So the method's correctness rests on the iterates never leaving the compatible
+subspace. Unpreconditioned Krylov satisfies this automatically: \(b\)'s F-block
+is \(\mathcal{G}\)-projected (measured: incompatible content 4.4e-16) and every
+application of \(A\) returns \(\mathcal{G}(\dots)\), so the whole Krylov space
+\(\mathrm{span}\{b, Ab, A^2b, \dots\}\) stays compatible.
+
+**The preconditioner breaks exactly this property.** Measured on the same
+system, feeding basis vectors of the compatible subspace through \(M^{-1}\):
+
+```
+||M^-1 v - Pi(M^-1 v)|| / ||M^-1 v||   over compatible v
+    min 1.96e-01   median 5.94e-01   max 6.85e-01
+```
+
+So \(M^{-1}\) moves a *majority* of each compatible vector out of the subspace,
+into directions that lie in \(\mathrm{null}(A)\) — directions the residual
+cannot see and which are not part of any physical deformation.
 
 \(\widehat{\mathcal{G}}\) is the orthogonal projector onto compatible
 (gradient) fields, so a converged fluctuation field must satisfy
@@ -182,6 +228,12 @@ which equals \(\mathrm{range}(\widehat{\mathcal{G}})\) only when
 incompatible content is invisible to the \(R_F\) residual block (which is
 itself \(\mathcal{G}\)-projected) but still contributes to the
 volume-averaged stress.
+
+Combining this with the rank analysis gives the complete mechanism: the
+converged \(\delta X\) is *(the unique physical solution) + (an arbitrary
+component of \(\mathrm{null}(A)\))*, and the preconditioner decides which null
+component you get. That is precisely why the three reference tangents produce
+three different answers while all three drive the residual to \(10^{-12}\).
 
 Measured by feeding a compatible field through the preconditioner:
 

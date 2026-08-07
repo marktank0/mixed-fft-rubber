@@ -27,8 +27,10 @@ from fg.io_paths import (
     phase_source,
 )
 from fg.preconditioning import (
+    DISCRETIZATIONS,
     REFERENCE_MODES,
     apply_mixed_reference_preconditioner,
+    build_Ghat4,
     build_mixed_reference_symbol,
     reference_average,
 )
@@ -128,21 +130,6 @@ def load_phase(path, N, phase_path=None, phase_key="phase"):
         raise ValueError("Phase shape {} does not match N={} for {}".format(phase.shape, N, phase_path))
 
     return phase.astype(float, copy=False), phase_path
-
-
-def build_Ghat4(N, stress_control, ndim=3):
-    """Green-projection symbol; vectorized form of the original loop."""
-    freq = np.arange(-(N-1)/2., +(N+1)/2.)        # coordinate axis -> freq. axis
-    q = np.stack(np.meshgrid(freq, freq, freq, indexing="ij"))   # (3,N,N,N)
-    q2 = np.einsum("kxyz,kxyz->xyz", q, q)
-    zero_freq = (q2 == 0)
-    q2safe = np.where(zero_freq, 1.0, q2)
-    QQ = np.einsum("jxyz,mxyz->jmxyz", q, q)/q2safe              # q_j q_m / |q|^2
-    Ghat4 = np.einsum("il,jmxyz->ijlmxyz", np.eye(ndim), QQ)
-    Ghat4[:, :, :, :, zero_freq] = 0.0
-    for (i, j) in stress_control:                # zero freq. -> mean
-        Ghat4[i, j, i, j, zero_freq] = 1.0
-    return Ghat4
 
 
 def eisenstat_walker_forcing(res_new, res_old, eta_prev,
@@ -265,6 +252,7 @@ class FFTSolver:
         eta_min=1.e-3,
         ew_gamma=0.9,
         ew_alpha=2.0,
+        discretization="fourier",
     ):
         """ """
         #
@@ -276,6 +264,8 @@ class FFTSolver:
             raise ValueError("Unknown forcing {!r}; use 'fixed' or 'eisenstat_walker'.".format(forcing))
         if not 0.0 < eta_min <= eta_max < 1.0:
             raise ValueError("Require 0 < eta_min <= eta_max < 1; got {} and {}.".format(eta_min, eta_max))
+        if discretization not in DISCRETIZATIONS:
+            raise ValueError("Unknown discretization {!r}; use one of {}.".format(discretization, DISCRETIZATIONS))
         #
         ndim = 3
         N = self.N
@@ -296,8 +286,8 @@ class FFTSolver:
         if give_Ghat:
             Ghat4 = Ghat_given
         else:
-            Ghat4 = build_Ghat4(N, self.pb.stress_control, ndim)
-        print("Ghat4 is formed...")
+            Ghat4 = build_Ghat4(N, self.pb.stress_control, ndim, discretization)
+        print("Ghat4 is formed ({} discretization)...".format(discretization))
         #
         # shifts act on the spatial axes only (component axes are untouched
         # by the transform, so shifting them cancelled out anyway)
@@ -594,6 +584,7 @@ class FFTSolver:
             "tol_abs": tol_abs,
             "max_gmres_iter": max_gmres_iter,
             "preconditioner": preconditioner,
+            "discretization": discretization,
             "reference": reference,
             "forcing": forcing,
             "inner_rtol": inner_rtol if forcing == "fixed" else None,
