@@ -352,17 +352,23 @@ Validation summary (all on the same structure/charge unless noted):
 
 **Known limits / next levers** (documented in detail in the plan file):
 
-- The Krylov iteration counts at high contrast (130-240 per solve at
-  500x) confirm that the *reference preconditioner* - built from the
-  arithmetic voxel-average tangent - degrades with contrast: the average
-  is dominated by the stiff phase, so the preconditioned operator is far
-  from identity on the (majority) matrix voxels. The two known levers,
-  not yet implemented, are: inexact Newton inner tolerances
-  (Eisenstat-Walker forcing terms; the current fixed inner `rtol = 1e-6`
-  over-solves early Newton steps), and a configurable reference tangent
-  (matrix-phase mean instead of global mean). Both preserve the converged
-  solution exactly - a preconditioner and an inner tolerance change the
-  iteration, not the fixed point.
+- ~~inexact Newton inner tolerances~~ and ~~a configurable reference
+  tangent~~ are **now implemented** (C5, C6). See
+  `docs/inexact_newton_and_reference_tangent.md`. C5 is the win:
+  Eisenstat-Walker forcing terms cut Krylov iterations 2.29x and wall time
+  ~2.5x at contrast 100 with the Newton count unchanged. C6 did *not* pay
+  off at contrast 100 / phi = 0.09 - the matrix-phase reference was ~10 %
+  worse than the volume average - so the default reference is unchanged.
+- The assumption stated here previously, that "a preconditioner and an
+  inner tolerance change the iteration, not the fixed point", holds for the
+  inner tolerance but **is false for the preconditioner as implemented**.
+  The Green symbol is built as `G K_0`, whose pseudo-inverse does not map
+  into `range(G)` unless `K_0` is isotropic, so the preconditioner takes
+  GMRES out of the compatible subspace and different reference tangents
+  converge to different states (P11 spread ~2.8e-3 relative at residual
+  ~1e-12). A tested fix (`G K_0 G`) exists but is not applied because it
+  changes historical results. See
+  `docs/green_reference_preconditioning.md` -> "Known Defect".
 - Physics interpretation of results (Mori-Tanaka vs Guth-Gold, effective
   volume fraction, aggregate morphology, percolation) is a
   microstructure question, not a solver question; see the discussion at
@@ -377,10 +383,10 @@ Validation summary (all on the same structure/charge unless noted):
 | `fg/constitutive_incompressible/1.py` | batched `umat_field` (Neo-Hookean); `umat` kept as wrapper |
 | `fg/constitutive_incompressible/2.py` | batched `umat_field` (Mooney-Rivlin, closed-form tangent); `umat` kept as wrapper |
 | `fg/mxfft.py` | vectorized Ghat4/constitutive/averages; scipy.fft backend; residual-based Newton with det-guard + line search; adaptive sub-stepping with rollback; statuses; `solver_stats.json`; incremental saving; memory-aware GMRES restart; new `calculate()` parameters |
-| `fg/preconditioning.py` | multithreaded scipy.fft, spatial-axes-only shifts |
+| `fg/preconditioning.py` | multithreaded scipy.fft, spatial-axes-only shifts; `reference_average()` for the C6 reference-tangent modes |
 | `run_case.py` | passes new solver settings; line-buffered `run.log`; passes solver status to metadata |
 | `run_metadata.py` | writes `Solver status:` line |
-| `simulation_config.py` | exposes `max_newton`, `min_substep_ratio`, `tol_rel`, `gmres_restart` in the YAML schema |
+| `simulation_config.py` | exposes `max_newton`, `min_substep_ratio`, `tol_rel`, `gmres_restart`, and the C5/C6 keys `reference`, `forcing`, `inner_rtol`, `eta_max`, `eta_min` in the YAML schema |
 | `plot_p11_vs_phr.py` | skips cases whose `solver_stats.json` status is `failed` |
 
 ## 10. References

@@ -27,8 +27,10 @@ from fg.io_paths import (
     phase_source,
 )
 from fg.preconditioning import (
+    REFERENCE_MODES,
     apply_mixed_reference_preconditioner,
     build_mixed_reference_symbol,
+    reference_average,
 )
 from fg.vtk_export import save_vti_cell_fields, solution_fields
 
@@ -143,6 +145,27 @@ def build_Ghat4(N, stress_control, ndim=3):
     return Ghat4
 
 
+def eisenstat_walker_forcing(res_new, res_old, eta_prev,
+                             gamma=0.9, alpha=2.0, eta_min=1.e-3, eta_max=1.e-2):
+    """Eisenstat-Walker "choice 2" forcing term for the next inexact Newton solve.
+
+    eta_k = gamma*(||r_k||/||r_{k-1}||)**alpha, with the standard safeguard
+    that stops the sequence from dropping too fast after one lucky step
+    (applied only while gamma*eta_{k-1}**alpha exceeds 0.1), then clamped to
+    [eta_min, eta_max].
+
+    Eisenstat & Walker (1996), SIAM J. Sci. Comput. 17(1), 16-32.
+    """
+    if not (res_old > 0.0) or not np.isfinite(res_new):
+        return float(eta_max)
+
+    eta = gamma*(res_new/res_old)**alpha
+    safeguard = gamma*eta_prev**alpha
+    if safeguard > 0.1:
+        eta = max(eta, safeguard)
+    return float(min(eta_max, max(eta_min, eta)))
+
+
 def format_scientific_cut(value, decimals=2):
     if not np.isfinite(value):
         return str(value)
@@ -235,11 +258,24 @@ class FFTSolver:
         max_backtracks=8,
         min_substep_ratio=1.0/16.0,
         gmres_restart=None,
+        reference="mean",
+        forcing="eisenstat_walker",
+        inner_rtol=1.e-6,
+        eta_max=1.e-2,
+        eta_min=1.e-3,
+        ew_gamma=0.9,
+        ew_alpha=2.0,
     ):
         """ """
         #
         if preconditioner not in (None, "none", "gmres", "reference"):
             raise ValueError("Unknown preconditioner {!r}; use None, 'gmres', or 'reference'.".format(preconditioner))
+        if reference not in REFERENCE_MODES:
+            raise ValueError("Unknown reference {!r}; use one of {}.".format(reference, REFERENCE_MODES))
+        if forcing not in ("fixed", "eisenstat_walker"):
+            raise ValueError("Unknown forcing {!r}; use 'fixed' or 'eisenstat_walker'.".format(forcing))
+        if not 0.0 < eta_min <= eta_max < 1.0:
+            raise ValueError("Require 0 < eta_min <= eta_max < 1; got {} and {}.".format(eta_min, eta_max))
         #
         ndim = 3
         N = self.N
@@ -401,15 +437,15 @@ class FFTSolver:
                     .format(prec_total, prec_F, prec_p)
                 )
 
-        def solve_linear(b):
-            """One preconditioned Krylov solve of KdX = b."""
+        def solve_linear(b, rtol):
+            """One preconditioned Krylov solve of KdX = b to relative tolerance rtol."""
             self.iter_num = 0
             Aop = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float')
             Mop = None
             if preconditioner == "reference":
-                K_ref = np.mean(state["K4"], axis=(4,5,6))
-                J_ref = np.mean(state["JFmT"], axis=(2,3,4))
-                kappa_inv_ref = np.mean(state["Kappa_inv"])
+                K_ref = reference_average(state["K4"], reference, mask_a, mask_b)
+                J_ref = reference_average(state["JFmT"], reference, mask_a, mask_b)
+                kappa_inv_ref = float(reference_average(state["Kappa_inv"], reference, mask_a, mask_b))
                 zero_mode_free = [3*i + j for i,j in self.pb.stress_control] + [9]
                 inv_symbol = build_mixed_reference_symbol(
                     Ghat4, K_ref, J_ref, kappa_inv_ref,
@@ -425,14 +461,14 @@ class FFTSolver:
                 # scipy's maxiter counts restart cycles, not iterations, so
                 # convert the total-iteration cap to whole cycles
                 restart_cycles = max(1, int(np.ceil(max_gmres_iter/float(gmres_restart))))
-                dX,flag = sp.gmres(rtol=1.e-6, atol=1.e-10,
+                dX,flag = sp.gmres(rtol=rtol, atol=1.e-10,
                   A = Aop, b = b, M = Mop, callback=gmres_callback,
                   callback_type="pr_norm", restart=gmres_restart,
                   maxiter=restart_cycles,
                 )
             else:
                 cg_callback = self.__progress_counter(KdX, b, label="cg")
-                dX,flag = sp.cg(rtol=1.e-6, atol=1.e-10,
+                dX,flag = sp.cg(rtol=rtol, atol=1.e-10,
                   A = Aop, b = b, callback=cg_callback,
                   maxiter=max_gmres_iter,
                 )
@@ -467,6 +503,7 @@ class FFTSolver:
             stats = {
                 "newton_iterations": 0,
                 "krylov_iterations": [],
+                "forcing_terms": [],
                 "alphas": [],
                 "residual_F": [res_F],
                 "residual_p": [res_p],
@@ -477,8 +514,15 @@ class FFTSolver:
                 return (res_F <= max(tol_rel*ref_F, tol_abs)
                         and res_p <= max(tol_rel*ref_p, tol_abs))
 
+            # inexact-Newton forcing term: the first solve of a sub-increment
+            # has no residual history, so it starts at the loosest allowed
+            # tolerance and tightens as the Newton residual falls
+            eta = eta_max if forcing == "eisenstat_walker" else inner_rtol
+
             while not is_converged():
-                dX, flag, Mop = solve_linear(b)
+                eta_used = eta
+                stats["forcing_terms"].append(eta_used)
+                dX, flag, Mop = solve_linear(b, eta_used)
                 stats["krylov_iterations"].append(self.iter_num)
                 if flag > 0:
                     stats["fail_reason"] = "gmres_iteration_cap"
@@ -517,16 +561,25 @@ class FFTSolver:
                 F = F_t
                 YALI = YALI_t
                 b = b_t
+                merit_prev = merit
                 res_F, res_p, merit = res_F_t, res_p_t, merit_t
                 P, K4, JFmT, Kappa_inv = constitutive(F, YALI)
                 state.update(K4=K4, JFmT=JFmT, Kappa_inv=Kappa_inv)
+                #
+                # next inner tolerance from the achieved outer residual drop
+                if forcing == "eisenstat_walker":
+                    eta = eisenstat_walker_forcing(
+                        merit, merit_prev, eta,
+                        gamma=ew_gamma, alpha=ew_alpha,
+                        eta_min=eta_min, eta_max=eta_max,
+                    )
                 #
                 stats["newton_iterations"] += 1
                 stats["alphas"].append(alpha)
                 stats["residual_F"].append(res_F)
                 stats["residual_p"].append(res_p)
-                print("res {:.3e} (F-block {:.3e} p-block {:.3e}) alpha {:.3g} iter times {}".format(
-                    alpha*np.linalg.norm(dFm)/Fn, res_F/ref_F, res_p/ref_p, alpha, self.iter_num))
+                print("res {:.3e} (F-block {:.3e} p-block {:.3e}) alpha {:.3g} eta {:.2e} iter times {}".format(
+                    alpha*np.linalg.norm(dFm)/Fn, res_F/ref_F, res_p/ref_p, alpha, eta_used, self.iter_num))
             #
             return True, F, YALI, P, stats
 
@@ -541,6 +594,11 @@ class FFTSolver:
             "tol_abs": tol_abs,
             "max_gmres_iter": max_gmres_iter,
             "preconditioner": preconditioner,
+            "reference": reference,
+            "forcing": forcing,
+            "inner_rtol": inner_rtol if forcing == "fixed" else None,
+            "eta_min": eta_min if forcing == "eisenstat_walker" else None,
+            "eta_max": eta_max if forcing == "eisenstat_walker" else None,
             "step_cuts": 0,
             "increments": [],
         }

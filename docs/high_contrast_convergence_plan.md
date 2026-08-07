@@ -6,9 +6,28 @@ det-guard + line search, adaptive load stepping). C1 additionally moved the
 FFTs to multithreaded `scipy.fft` and restricted the fftshifts to the
 spatial axes after profiling showed the FFTs dominate once the constitutive
 loops are vectorized. C0 landed in reduced form (`solver_stats.json` +
-solver status in `run_metadata.txt`). C5-C8 remain open; C5 (inexact inner
-tolerances) and C6 (reference-tangent choice) are the next levers if
-high-contrast Krylov counts are still too high.
+solver status in `run_metadata.txt`).
+
+**C5 and C6 are now implemented** - see
+`docs/inexact_newton_and_reference_tangent.md` for theory, implementation
+and measurements. Summary: C5 (Eisenstat-Walker forcing terms) gives
+**2.29x fewer Krylov iterations and ~2.5x lower wall time at contrast 100
+with the Newton count unchanged**, and `forcing="fixed"` reproduces the
+pre-change solver bitwise. C6 (configurable reference tangent) is
+implemented and measured, but **did not help** at contrast 100 /
+phi = 0.09: the matrix-phase reference was ~10 % *worse* than the volume
+average, so D5's expectation is not confirmed at that contrast and the
+default stays `"mean"`.
+
+Validating C6 also uncovered a **pre-existing defect in the Green
+preconditioner**: because the symbol is built as `G K_0` rather than
+`G K_0 G`, the preconditioner maps iterates out of the compatible subspace,
+so different reference tangents converge to genuinely different states
+(~2.8e-3 relative in P11) with fully converged residuals. See section 5 of
+the C5/C6 note. A tested one-line fix exists but has not been applied
+because it changes every result produced with `preconditioner="reference"`.
+
+C7 and C8 remain open.
 
 Measured after C1-C4 (structure phr_18.45, N = 31, reference
 preconditioner): contrast 10, 3 increments: 37 s, results identical to the
@@ -457,6 +476,16 @@ less accurate mid-iteration does not bias the converged state.
 boundary outputs (within outer tolerance), total Krylov iterations reduced;
 Newton iterations not increased by more than ~20 %.
 
+*Implemented. Eisenstat-Walker choice 2 (gamma = 0.9, alpha = 2) on the
+block-normalized merit function, clamped to [1e-3, 1e-2], reset per
+sub-increment; `forcing="fixed"` restores the old fixed `rtol`. Measured at
+contrast 100, N = 31: 1024 -> 447 Krylov iterations (2.29x), 104 s -> 42 s,
+Newton count unchanged at 12, `forcing="fixed"` bitwise-identical to the
+pre-change solver. The final-iteration tightening sketched above was
+deliberately not implemented - the measured residual histories reach ~1e-12
+in five Newton steps, so eta_min = 1e-3 is never the binding constraint.
+Full theory and measurements: `docs/inexact_newton_and_reference_tangent.md`.*
+
 ### C6. Configurable reference tangent for the Green preconditioner
 
 **What.** Add a `reference` option to the solver/config:
@@ -496,6 +525,29 @@ as is. The pseudo-inverse construction already guards rank deficiency.
 **Validate.** GMRES-count table (reference x contrast) from C0 stats on one
 structure; identical converged outputs across references (within linear
 tolerance) as a preconditioner-correctness check.
+
+*Implemented as `reference` = `"mean"` | `"matrix"` | `"mid"`
+(`reference_average()` in `fg/preconditioning.py`), applied to K_0, H_0 and
+alpha_0 in the mixed solver and to K_0 in the standard solver. Default stays
+`"mean"`.*
+
+***The expectation in D5 was not confirmed at contrast 100.*** *At
+phi = 0.089, the matrix-phase reference needed ~10 % **more** Krylov
+iterations than the volume average (1130 vs 1024 at fixed inner tolerance);
+`"mid"` was equivalent to `"mean"`. Whether D5's argument bites at contrast
+>= 1e3 is still open.*
+
+***The preconditioner-correctness check above FAILED, and the cause is a
+pre-existing defect, not C6.*** *The three references converge to different
+states (P11 spread ~2.8e-3 relative) even at `tol_rel = 1e-9` with residuals
+at ~1e-12. The symbol is built as `G K_0`, whose pseudo-inverse has range
+`K_0^T range(G)`; that equals `range(G)` only for isotropic K_0, so the
+preconditioner carries GMRES iterates out of the compatible subspace and the
+incompatible content is invisible to the G-projected F-residual. Building the
+symbol as `G K_0 G` fixes it (measured: incompatible content 8.2e-1 ->
+4.9e-13) but changes every historical `preconditioner="reference"` result, so
+it is left for the project owner to decide. Details in section 5 of
+`docs/inexact_newton_and_reference_tangent.md`.*
 
 ### C7. Make the default linear solver honest
 

@@ -159,6 +159,75 @@ $$
 
 At zero frequency, the mixed preconditioner uses the same free stress-controlled deformation components, plus the pressure component. Fixed macroscopic \(F_{ij}\) components are removed from the zero-mode reference inverse.
 
+## Known Defect: the preconditioner does not preserve the compatible subspace
+
+**This is a measured defect, not a theoretical concern.** It affects every run
+made with `preconditioner="reference"`.
+
+\(\widehat{\mathcal{G}}\) is the orthogonal projector onto compatible
+(gradient) fields, so a converged fluctuation field must satisfy
+\(\mathcal{G}(\delta F) = \delta F\). With left preconditioning the GMRES
+iterates lie in \(\mathrm{span}\{M^{-1}b, M^{-1}AM^{-1}b, \dots\}\). The
+symbol implemented above is \(\widehat{\mathcal{G}}\mathbb{K}_0\), whose
+pseudo-inverse has range
+
+$$
+\mathrm{range}\left[(\widehat{\mathcal{G}}\mathbb{K}_0)^{+}\right]
+= \mathbb{K}_0^{T}\,\mathrm{range}(\widehat{\mathcal{G}}),
+$$
+
+which equals \(\mathrm{range}(\widehat{\mathcal{G}})\) only when
+\(\mathbb{K}_0 \propto I\). A finite-strain hyperelastic tangent never is, so
+\(M^{-1}\) carries the iterates *out* of the compatible subspace. The
+incompatible content is invisible to the \(R_F\) residual block (which is
+itself \(\mathcal{G}\)-projected) but still contributes to the
+volume-averaged stress.
+
+Measured by feeding a compatible field through the preconditioner:
+
+```
+input field                                  incompatible content = 3.6e-16
+K_ref isotropic    -> M^-1 output            incompatible content = 3.9e-16
+K_ref anisotropic  -> M^-1 output            incompatible content = 8.2e-01
+```
+
+Consequence at the solver level (contrast 100, N = 31, `tol_rel = 1e-9`,
+nonlinear residual driven to ~1e-12 in every case):
+
+| reference | P11 | incompatible content of converged field |
+|---|---|---|
+| mean | 1.0835510581 | 0.640 |
+| matrix | 1.0804848613 | 0.646 |
+| mid | 1.0837578465 | 0.640 |
+
+The values are stable to nine digits within each mode and do not move when
+`tol_rel` is tightened, so this is not a tolerance effect: the reference
+choice selects which solution the iteration lands on.
+
+### Candidate fix (tested, not applied)
+
+Build the symbol as the restriction of the operator to the compatible
+subspace,
+
+$$
+\widehat{A}_{F,0}(\xi) = \widehat{\mathcal{G}}(\xi)\,\mathbb{K}_0\,\widehat{\mathcal{G}}(\xi),
+$$
+
+so that, \(\widehat{\mathcal{G}}\) being a symmetric projector, the
+pseudo-inverse's range is contained in
+\(\mathrm{range}(\widehat{\mathcal{G}})\). Measured on the same probe:
+
+```
+current  G*K    -> output incompatible = 8.2e-01
+fixed    G*K*G  -> output incompatible = 4.9e-13
+```
+
+The mixed symbol needs the same treatment on its \(H_0^{T}\) row. This has
+not been applied because it changes every historical result produced with
+`preconditioner="reference"`; that is a call for the project owner. Until it
+is resolved, `reference="mean"` is the only mode with an established results
+history and remains the default.
+
 ## Important Caveats
 
 This is an experimental preconditioner for this repository, not a fully validated Green-Jacobi implementation.

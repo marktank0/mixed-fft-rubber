@@ -32,8 +32,20 @@ defaults:
     savemodel: normal
     max_gmres_iter: 600
     min_substep_ratio: 0.25
-    #tol_rel: 
+    #tol_rel:
     gmres_restart: 40 #num of vectors
+    # C5 - inexact Newton. Forcing terms adapt the inner GMRES tolerance to the
+    # outer Newton residual instead of always solving to 1e-6 (~2.3x fewer
+    # Krylov iterations at contrast 100, same converged answer).
+    # Use forcing: fixed + inner_rtol: 1.0e-6 to reproduce pre-C5 runs exactly.
+    forcing: eisenstat_walker   # eisenstat_walker | fixed
+    eta_max: 1.0e-2             # loosest inner tolerance
+    eta_min: 1.0e-3             # tightest inner tolerance
+    # C6 - reference tangent for the Green preconditioner: mean | matrix | mid
+    # Keep "mean" for production: it is the only mode with an established
+    # results history, and the reference choice currently perturbs the
+    # converged answer (see docs/green_reference_preconditioning.md).
+    reference: mean
 
   phases:
     matrix_phase: 0

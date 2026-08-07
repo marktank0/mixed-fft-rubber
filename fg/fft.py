@@ -24,8 +24,10 @@ from fg.io_paths import (
     phase_source,
 )
 from fg.preconditioning import (
+    REFERENCE_MODES,
     apply_standard_reference_preconditioner,
     build_standard_reference_symbol,
+    reference_average,
 )
 from fg.vtk_export import save_vti_cell_fields, solution_fields
 
@@ -206,11 +208,14 @@ class FFTSolver:
         preconditioner=None,
         save_fields=False,
         field_filename="fields.vti",
+        reference="mean",
     ):
         """ """
         #
         if preconditioner not in (None, "none", "reference"):
             raise ValueError("Unknown preconditioner {!r}; use None or 'reference'.".format(preconditioner))
+        if reference not in REFERENCE_MODES:
+            raise ValueError("Unknown reference {!r}; use one of {}.".format(reference, REFERENCE_MODES))
         #
         ndim = 3
         N = self.N
@@ -245,6 +250,8 @@ class FFTSolver:
         G_K_dF = lambda dFm: G(K_dF(dFm))
         #
         phase = self.phase
+        mask_a = (phase == 0)
+        mask_b = (phase == 1)
         #
         parameter_a = self.pb.model_a_para
         parameter_b = self.pb.model_b_para
@@ -330,7 +337,7 @@ class FFTSolver:
                 Aop = sp.LinearOperator(shape=(F.size,F.size),matvec=G_K_dF,dtype='float')
                 Mop = None
                 if preconditioner == "reference":
-                    K_ref = np.mean(K4, axis=(4,5,6))
+                    K_ref = reference_average(K4, reference, mask_a, mask_b)
                     zero_mode_free = [3*i + j for i,j in self.pb.stress_control]
                     inv_symbol = build_standard_reference_symbol(
                         Ghat4, K_ref, zero_mode_free_components=zero_mode_free
