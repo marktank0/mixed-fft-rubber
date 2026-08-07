@@ -683,6 +683,14 @@ class FFTSolver:
         self.__save_stats(self.path)
         print("solver stats are saved to solver_stats.json")
         #
+        # keep the final local fields reachable by callers: the averages alone
+        # cannot show whether F is a compatible (gradient) field, which is the
+        # diagnostic that distinguishes a physical solution from one polluted
+        # with null-space content (see docs/green_reference_preconditioning.md)
+        self.F_final = F
+        self.P_final = P_boundary
+        self.pressure_final = YALI
+        #
         #
         if savemodel == "normal" or savemodel == "both":
             #save Fs and Ps

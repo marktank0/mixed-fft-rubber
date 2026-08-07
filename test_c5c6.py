@@ -28,7 +28,7 @@ import numpy as np
 from fg.mxfft import eisenstat_walker_forcing
 from fg.preconditioning import REFERENCE_MODES, reference_average
 
-BASELINE_MODULE = os.path.join("fg", "_mxfft_baseline.py")
+from benchmark_suite import ensure_baseline   # pins the solver AND its changed deps
 
 
 # --------------------------------------------------------------- unit tests
@@ -98,17 +98,10 @@ def test_forcing():
 
 
 # ------------------------------------------------------------- solver tests
-def ensure_baseline():
-    if not os.path.exists(BASELINE_MODULE):
-        src = subprocess.check_output(["git", "show", "HEAD:fg/mxfft.py"])
-        with open(BASELINE_MODULE, "wb") as fh:
-            fh.write(src)
-
-
 def test_solver(out_root, structure, charge, N, incre):
     ensure_baseline()
     import fg.mxfft as new
-    import fg._mxfft_baseline as base
+    import fg._baseline.mxfft as base
 
     def run(tag, module, **kw):
         path = os.path.join(out_root, tag)
