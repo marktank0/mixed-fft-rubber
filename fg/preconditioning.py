@@ -156,12 +156,26 @@ def _constrain_zero_mode(inv_symbol, symbol, free_components, rcond):
     return inv_symbol
 
 
-def build_standard_reference_symbol(Ghat4, K_ref, rcond=1.0e-10, zero_mode_free_components=None):
-    """Build the Fourier-space pseudo-inverse of Ghat:K_ref."""
+def build_standard_reference_symbol(Ghat4, K_ref, rcond=1.0e-10, zero_mode_free_components=None,
+                                    restrict_to_compatible=True):
+    """Build the Fourier-space pseudo-inverse of the reference operator.
+
+    With restrict_to_compatible (the default) the symbol is the reference
+    operator *restricted* to the compatible subspace, Ghat K_ref Ghat. Because
+    Ghat is a symmetric projector this makes range(symbol^+) a subset of
+    range(Ghat), so the preconditioner cannot carry Krylov iterates out of the
+    compatible subspace. See docs/green_reference_preconditioning.md.
+
+    restrict_to_compatible=False restores the previous Ghat K_ref symbol and
+    exists only to reproduce results produced before the fix.
+    """
     N = Ghat4.shape[-1]
     G9 = Ghat4.reshape(9, 9, N, N, N)
     K9 = K_ref.reshape(9, 9)
-    symbol = np.einsum("abxyz,bc->acxyz", G9, K9)
+    if restrict_to_compatible:
+        symbol = np.einsum("abxyz,bc,cdxyz->adxyz", G9, K9, G9)
+    else:
+        symbol = np.einsum("abxyz,bc->acxyz", G9, K9)
     inv_symbol = _pinv_symbol(symbol, rcond)
     return _constrain_zero_mode(inv_symbol, symbol, zero_mode_free_components, rcond)
 
@@ -182,8 +196,21 @@ def build_mixed_reference_symbol(
     kappa_inv_ref,
     rcond=1.0e-10,
     zero_mode_free_components=None,
+    restrict_to_compatible=True,
 ):
-    """Build the Fourier-space pseudo-inverse of the mixed reference block."""
+    """Build the Fourier-space pseudo-inverse of the mixed reference block.
+
+    With restrict_to_compatible (the default) the symbol is the reference
+    operator restricted to the compatible subspace, Pi A0 Pi with
+    Pi = diag(Ghat, I): the deformation block is sandwiched as Ghat K0 Ghat and
+    the pressure row sees only the compatible part of the deformation block.
+    range(symbol^+) is then contained in range(Pi), so the preconditioner keeps
+    Krylov iterates inside the subspace on which the operator is nonsingular.
+    See docs/green_reference_preconditioning.md.
+
+    restrict_to_compatible=False restores the previous symbol and exists only
+    to reproduce results produced before the fix.
+    """
     N = Ghat4.shape[-1]
     G9 = Ghat4.reshape(9, 9, N, N, N)
     K9 = K_ref.reshape(9, 9)
@@ -192,9 +219,13 @@ def build_mixed_reference_symbol(
     # dtype follows Ghat4: complex for discretizations with a complex symbol
     dtype = np.result_type(G9.dtype, K9.dtype, J9.dtype, float)
     symbol = np.zeros((10, 10, N, N, N), dtype=dtype)
-    symbol[:9, :9] = np.einsum("abxyz,bc->acxyz", G9, K9)
+    if restrict_to_compatible:
+        symbol[:9, :9] = np.einsum("abxyz,bc,cdxyz->adxyz", G9, K9, G9)
+        symbol[9, :9] = np.einsum("b,baxyz->axyz", J9, G9)
+    else:
+        symbol[:9, :9] = np.einsum("abxyz,bc->acxyz", G9, K9)
+        symbol[9, :9] = J9[:, None, None, None]
     symbol[:9, 9] = np.einsum("abxyz,b->axyz", G9, J9)
-    symbol[9, :9] = J9[:, None, None, None]
     symbol[9, 9] = -float(kappa_inv_ref)
 
     inv_symbol = _pinv_symbol(symbol, rcond)

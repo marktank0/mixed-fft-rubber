@@ -39,6 +39,7 @@ def _run_case_impl(case):
     gmres_restart = case.get("gmres_restart")
     reference = _case_value(case, "reference", "mean")
     discretization = _case_value(case, "discretization", "fourier")
+    precond_restrict = _case_value(case, "precond_restrict", True)
     forcing = _case_value(case, "forcing", "eisenstat_walker")
     inner_rtol = _case_value(case, "inner_rtol", 1.e-6)
     eta_max = _case_value(case, "eta_max", 1.e-2)
@@ -69,6 +70,7 @@ def _run_case_impl(case):
         gmres_restart=gmres_restart,
         reference=reference,
         discretization=discretization,
+        precond_restrict=precond_restrict,
         forcing=forcing,
         inner_rtol=inner_rtol,
         eta_max=eta_max,

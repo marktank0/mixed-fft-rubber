@@ -212,6 +212,7 @@ class FFTSolver:
         field_filename="fields.vti",
         reference="mean",
         discretization="fourier",
+        precond_restrict=True,
     ):
         """ """
         #
@@ -335,7 +336,8 @@ class FFTSolver:
                     K_ref = reference_average(K4, reference, mask_a, mask_b)
                     zero_mode_free = [3*i + j for i,j in self.pb.stress_control]
                     inv_symbol = build_standard_reference_symbol(
-                        Ghat4, K_ref, zero_mode_free_components=zero_mode_free
+                        Ghat4, K_ref, zero_mode_free_components=zero_mode_free,
+                        restrict_to_compatible=precond_restrict,
                     )
                     Mop = sp.LinearOperator(
                         shape=(F.size,F.size),

@@ -253,6 +253,7 @@ class FFTSolver:
         ew_gamma=0.9,
         ew_alpha=2.0,
         discretization="fourier",
+        precond_restrict=True,
     ):
         """ """
         #
@@ -440,6 +441,7 @@ class FFTSolver:
                 inv_symbol = build_mixed_reference_symbol(
                     Ghat4, K_ref, J_ref, kappa_inv_ref,
                     zero_mode_free_components=zero_mode_free,
+                    restrict_to_compatible=precond_restrict,
                 )
                 Mop = sp.LinearOperator(
                     shape=(num_tol,num_tol),
@@ -585,6 +587,7 @@ class FFTSolver:
             "max_gmres_iter": max_gmres_iter,
             "preconditioner": preconditioner,
             "discretization": discretization,
+            "precond_restrict": precond_restrict,
             "reference": reference,
             "forcing": forcing,
             "inner_rtol": inner_rtol if forcing == "fixed" else None,

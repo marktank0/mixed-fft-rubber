@@ -256,29 +256,89 @@ The values are stable to nine digits within each mode and do not move when
 `tol_rel` is tightened, so this is not a tolerance effect: the reference
 choice selects which solution the iteration lands on.
 
-### Candidate fix (tested, not applied)
+### The fix (APPLIED)
 
-Build the symbol as the restriction of the operator to the compatible
-subspace,
+The symbol is now built as the reference operator **restricted to the
+compatible subspace**, \(\Pi A_0 \Pi\) with \(\Pi = \mathrm{diag}(\widehat{\mathcal{G}}, I)\):
 
 $$
-\widehat{A}_{F,0}(\xi) = \widehat{\mathcal{G}}(\xi)\,\mathbb{K}_0\,\widehat{\mathcal{G}}(\xi),
+\widehat{A}_{M,0}(\xi)
+=
+\begin{bmatrix}
+\widehat{\mathcal{G}}\mathbb{K}_0\widehat{\mathcal{G}}
+&
+\widehat{\mathcal{G}}H_0
+\\
+H_0^{T}\widehat{\mathcal{G}}
+&
+-\alpha_0
+\end{bmatrix},
+\qquad
+\widehat{A}_{F,0}(\xi) = \widehat{\mathcal{G}}\mathbb{K}_0\widehat{\mathcal{G}} .
 $$
 
-so that, \(\widehat{\mathcal{G}}\) being a symmetric projector, the
-pseudo-inverse's range is contained in
-\(\mathrm{range}(\widehat{\mathcal{G}})\). Measured on the same probe:
+Both the deformation block and the pressure row are projected. Since
+\(\widehat{\mathcal{G}}\) is a symmetric projector,
+\(\mathrm{range}\left[(\Pi A_0 \Pi)^{+}\right] \subseteq \mathrm{range}(\Pi)\),
+so the preconditioner keeps the Krylov space inside the subspace on which the
+operator is nonsingular — and GMRES therefore converges to the *unique*
+physical solution.
 
-```
-current  G*K    -> output incompatible = 8.2e-01
-fixed    G*K*G  -> output incompatible = 4.9e-13
-```
+`precond_restrict=False` (solver argument / YAML `solver.precond_restrict`)
+restores the old symbol, and exists only to reproduce results produced before
+the fix.
 
-The mixed symbol needs the same treatment on its \(H_0^{T}\) row. This has
-not been applied because it changes every historical result produced with
-`preconditioner="reference"`; that is a call for the project owner. Until it
-is resolved, `reference="mean"` is the only mode with an established results
-history and remains the default.
+### Validation
+
+**1. The preconditioner now preserves the subspace.** Same probe as above:
+
+| | leakage \(\lVert M^{-1}v - \Pi M^{-1}v\rVert / \lVert M^{-1}v\rVert\) |
+|---|---|
+| before | min 1.96e-01, median 5.94e-01, max 6.85e-01 |
+| after | min 1.53e-15, median 1.84e-15, max 2.14e-15 |
+
+**2. The reference tangent no longer changes the answer** — the defining
+property of a preconditioner. Contrast 100, \(N=31\), `tol_rel=1e-9`:
+
+| reference | before: \(\bar P_{11}\) | after: \(\bar P_{11}\) |
+|---|---|---|
+| mean | 1.0835510581 | **1.2726045390** |
+| matrix | 1.0804848613 | **1.2726045390** |
+| mid | 1.0837578465 | **1.2726045390** |
+| spread | 3.02e-03 | **3.98e-12** |
+
+and the converged fluctuation field is compatible again (incompatible content
+6.4e-01 → ~2.5e-13).
+
+**3. An independent control confirms which answer is correct.**
+Unpreconditioned GMRES provably cannot leave the compatible subspace (\(b\)'s
+F-block is \(\mathcal{G}\)-projected and every application of \(A\)
+re-projects), so it is an unbiased reference. Contrast 100, \(N=31\),
+`tol_rel=1e-7`:
+
+| run | \(\bar P_{11}\) | incompatible | Krylov | wall |
+|---|---|---|---|---|
+| unpreconditioned (control) | 1.2726045390 | 1.5e-11 | 6314 | 1256 s |
+| preconditioned, **fixed** | 1.2726045376 | 2.7e-13 | **217** | **23 s** |
+| preconditioned, pre-fix | 1.0835510573 | 6.4e-01 | 130 | 15 s |
+
+The fixed preconditioner agrees with the control to **9 significant figures**
+while being a 29x iteration / 55x wall-time accelerator over no
+preconditioning. The pre-fix result is wrong by **+17.4 %** in
+\(\bar P_{11}\).
+
+### Impact on existing results
+
+**Every run produced with `preconditioner="reference"` is affected**, which
+includes the production sweeps in `Results/`. The error is not a small
+tolerance-level perturbation: it was 17 % in \(\bar P_{11}\) on the case
+measured. Affected runs need to be regenerated. The magnitude will depend on
+contrast, filler fraction and strain level, so it should be re-measured per
+sweep rather than assumed to be 17 %.
+
+The cost of the fix is that the restricted symbol is a slightly weaker
+accelerator: on the contrast-100 case the Krylov count per solve rose from
+~130-190 to ~220-290. That is the price of solving the right problem.
 
 ## Important Caveats
 

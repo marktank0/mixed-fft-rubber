@@ -366,9 +366,13 @@ Validation summary (all on the same structure/charge unless noted):
   into `range(G)` unless `K_0` is isotropic, so the preconditioner takes
   GMRES out of the compatible subspace and different reference tangents
   converge to different states (P11 spread ~2.8e-3 relative at residual
-  ~1e-12). A tested fix (`G K_0 G`) exists but is not applied because it
-  changes historical results. See
-  `docs/green_reference_preconditioning.md` -> "Known Defect".
+  ~1e-12). **This has now been fixed**: the symbol is built as the reference
+  operator restricted to the compatible subspace. An unpreconditioned control
+  confirms the corrected answer to 9 significant figures, and the pre-fix
+  result was wrong by **+17.4 % in P11**. Every run made with
+  `preconditioner="reference"` is affected and needs regenerating; set
+  `precond_restrict=False` to reproduce the old numbers. See
+  `docs/green_reference_preconditioning.md`.
 - Physics interpretation of results (Mori-Tanaka vs Guth-Gold, effective
   volume fraction, aggregate morphology, percolation) is a
   microstructure question, not a solver question; see the discussion at

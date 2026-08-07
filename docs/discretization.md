@@ -137,13 +137,14 @@ ringing lives.
 See section 6 for the measured contrast ladder. Two caveats govern how far
 these can be pushed:
 
-**The accuracy comparison is contaminated by the preconditioner defect.**
-`preconditioner="reference"` does not preserve the compatible subspace (see
-`docs/green_reference_preconditioning.md` → "Known Defect"), so *both* schemes
-converge to a physical solution plus an arbitrary incompatible component.
-Comparing local-field quality between discretizations is only clean once that
-is fixed, or with unpreconditioned runs. Iteration counts and wall times are
-unaffected by this and remain meaningful.
+**The measured numbers below predate the preconditioner fix.** They were
+produced while `preconditioner="reference"` still left the compatible subspace
+(see `docs/green_reference_preconditioning.md`), so *both* schemes converged to
+a physical solution plus an arbitrary incompatible component. The **iteration
+counts remain a fair comparison** — both schemes ran under the same
+preconditioner — but the **accuracy columns are not meaningful** and the
+comparison should be regenerated now that `precond_restrict=True` is the
+default.
 
 **A definitive accuracy verdict needs a resolution study.** The standard
 demonstration that Willot's scheme is more accurate is that its local fields
@@ -154,8 +155,38 @@ out of budget on the current hardware.
 
 ## 6. Measured
 
-*(filled in by `benchmark_discretization.py`; see the run log for the current
-numbers.)*
+Structure `1_voxel.npz`, \(N=31\), \(\phi = 8.9\,\%\), 3 increments of 0.1,
+C5 forcing terms, `reference="mean"`. Total Krylov iterations over all Newton
+steps (pre-fix preconditioner — see the caveat in section 5):
+
+| contrast | spectral | Willot | change |
+|---|---|---|---|
+| 10 | 115 | 115 | 0.0 % |
+| 100 | 447 | 457 | +2.2 % |
+| 500 | 1736 | 1727 | −0.5 % |
+| 1000 | 2904 | 3120 | +7.4 % |
+
+Newton counts were identical at every contrast.
+
+**Willot's scheme does not reduce solver cost.** It is iteration-neutral to
+slightly worse across two decades of contrast, and each iteration is *more*
+expensive because `Ghat4` is complex (double the memory, a costlier
+contraction). Net, it is modestly slower.
+
+This is the expected result, and not a failure of the scheme. Willot's rotated
+difference is an **accuracy** intervention, not a convergence one: it changes
+*which discrete problem* is solved, not how fast the solver reaches it. The
+convergence benefit reported in the literature is largely for the *basic
+(fixed-point) Moulinec-Suquet iteration*, whose contraction rate depends
+directly on the operator's spectrum. This repository solves with
+Newton-Krylov plus a Green preconditioner, where the conditioning is already
+handled by the preconditioner — so improving the discretization's spectrum
+buys little.
+
+The case for adopting Willot here therefore has to be made on local-field
+accuracy (no Gibbs ringing at interfaces), not on runtime, and that case is
+**not yet demonstrated in this repository** — see the two caveats in
+section 5.
 
 ---
 

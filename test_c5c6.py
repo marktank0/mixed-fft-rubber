@@ -123,31 +123,53 @@ def test_solver(out_root, structure, charge, N, incre):
         kry = [k for i in st["increments"] for k in i["krylov_iterations"]]
         return (np.array(prob.Ps), np.array(prob.Fs), sum(kry), time.time()-t0)
 
+    # ---- C5 regression, against the pre-change solver.
+    # This must use precond_restrict=False: the preconditioner fix changes the
+    # converged answer (the old symbol left the compatible subspace), so the
+    # only meaningful bitwise comparison is against the old preconditioner.
     ref_P, ref_F, ref_k, ref_t = run("baseline", base)
-    fix_P, fix_F, fix_k, _ = run("fixed", new, forcing="fixed",
-                                 inner_rtol=1.e-6, reference="mean")
+    fix_P, fix_F, fix_k, _ = run("fixed", new, forcing="fixed", inner_rtol=1.e-6,
+                                 reference="mean", precond_restrict=False)
 
     assert np.array_equal(fix_P, ref_P) and np.array_equal(fix_F, ref_F), \
-        "forcing='fixed' must reproduce the pre-change solver bitwise"
+        "forcing='fixed' + precond_restrict=False must reproduce the pre-change solver bitwise"
     assert fix_k == ref_k
-    print("forcing='fixed' reproduces baseline BITWISE ({} Krylov its) OK".format(ref_k))
+    print("forcing='fixed', precond_restrict=False reproduces baseline BITWISE"
+          " ({} Krylov its) OK".format(ref_k))
 
     scale = np.max(np.abs(ref_P))
-    for tag, kw in (("EW/mean",   dict(forcing="eisenstat_walker", reference="mean")),
-                    ("EW/matrix", dict(forcing="eisenstat_walker", reference="matrix")),
-                    ("EW/mid",    dict(forcing="eisenstat_walker", reference="mid"))):
-        P, _F, k, t = run(tag.replace("/", "_"), new, **kw)
+    for tag, kw in (("EW/mean",   dict(reference="mean")),
+                    ("EW/matrix", dict(reference="matrix")),
+                    ("EW/mid",    dict(reference="mid"))):
+        P, _F, k, t = run(tag.replace("/", "_"), new, forcing="eisenstat_walker",
+                          precond_restrict=False, **kw)
         # normalise by the tensor scale: the stress-controlled components are
         # driven to ~0 by construction, so a componentwise ratio is meaningless
         err = np.max(np.abs(P - ref_P))/scale
         p11 = np.max(np.abs(P[:, 0, 0] - ref_P[:, 0, 0])/np.abs(ref_P[:, 0, 0]))
         print("{:<10} krylov {:>5} ({:.2f}x)  wall {:>6.1f}s  relerr(P) {:.1e}  relerr(P11) {:.1e}"
               .format(tag, k, ref_k/k, t, err, p11))
-        # the reference modes currently perturb the converged state - see
-        # docs/green_reference_preconditioning.md -> "Known Defect"
+        # with the OLD preconditioner the reference mode still perturbs the
+        # answer, hence the looser limit off "mean" - that is the defect the
+        # fix removes, and is asserted away below
         limit = 1e-4 if kw["reference"] == "mean" else 5e-3
         assert err < limit and p11 < limit, (tag, err, p11)
-    print("all C5/C6 variants agree with baseline within tolerance OK")
+    print("C5 preserves the baseline answer at fixed preconditioner OK")
+
+    # ---- the preconditioner fix: the reference tangent must NOT change the answer
+    fixed = {}
+    for ref in ("mean", "matrix", "mid"):
+        P, _F, k, t = run("restrict_" + ref, new, forcing="eisenstat_walker",
+                          reference=ref, precond_restrict=True)
+        fixed[ref] = P
+        print("restrict/{:<7} krylov {:>5}  wall {:>6.1f}s  P11 {:.10f}"
+              .format(ref, k, t, P[-1, 0, 0]))
+    base_p11 = fixed["mean"][:, 0, 0]
+    for ref in ("matrix", "mid"):
+        spread = np.max(np.abs(fixed[ref][:, 0, 0] - base_p11)/np.abs(base_p11))
+        assert spread < 1e-7, (ref, spread)
+    print("with precond_restrict=True the reference tangent does not change the"
+          " converged answer (spread < 1e-7) OK")
 
 
 def main():
