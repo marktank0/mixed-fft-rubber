@@ -1,0 +1,70 @@
+{
+ "status": "converged",
+ "tol_rel": 1e-05,
+ "tol_abs": 1e-10,
+ "max_gmres_iter": 600,
+ "preconditioner": "reference",
+ "step_cuts": 0,
+ "increments": [
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    98,
+    129,
+    138
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    6402.795287498816,
+    157.92334109986245,
+    0.8007780072238703,
+    0.00047652904453359855
+   ],
+   "residual_p": [
+    15.001409933734408,
+    0.6653444078313574,
+    0.1314992481324046,
+    8.333767835677889e-05
+   ],
+   "fail_reason": null,
+   "step": 0.5,
+   "load_start": 0.0,
+   "converged": true,
+   "time_seconds": 3181.0332577228546
+  },
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    102,
+    136,
+    144
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    6401.033659412831,
+    158.48357140096408,
+    0.9105207292416428,
+    0.0008052473548137604
+   ],
+   "residual_p": [
+    14.575649619879648,
+    0.6693252920930959,
+    0.1396551625468325,
+    8.997313012437753e-05
+   ],
+   "fail_reason": null,
+   "step": 0.5,
+   "load_start": 0.5,
+   "converged": true,
+   "time_seconds": 3234.9738523960114
+  }
+ ]
+}

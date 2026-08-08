@@ -1,0 +1,64 @@
+version: 1
+base_path: . #/home/jovyan/mixed-fft-rubber/
+
+experiment:
+  name: 120_reinforcement_test
+  output_root: Results/120_reinforcement_test
+
+run:
+  mode: batch # cases | batch
+
+execution:
+  max_workers: 120
+  log_to_file: true
+  on_existing: overwrite # skip | overwrite | error
+  save_resolved_config: true
+  thread_env:
+    OMP_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    MKL_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1
+    FFT_WORKERS: 1
+
+defaults:
+  solver:
+    type: mixed
+    N: 63
+    increments:
+      repeat: 2
+      value: 0.5
+    preconditioner: reference
+    diagnostics: false
+    savemodel: normal
+    max_gmres_iter: 600
+    min_substep_ratio: 0.25
+    #tol_rel: 
+    gmres_restart: 40 #num of vectors
+
+  phases:
+    matrix_phase: 0
+    filler_phase: 1
+    phase_key: phase
+
+  outputs:
+    save_plots: true
+    plot_dpi: 200
+    save_fields: false
+    field_filename: fields.vti
+
+  charge:
+    path: 3D_samples/Charges/Neo_reinforcement_test_E10-10000.txt
+
+batch:
+  structures:
+    glob: microstructure_generation/3D_samples/improved_struct_v4/voxel_structures/*.npz
+    sort: name
+    include: ["*_voxel.npz"]
+    exclude: ["test_*"]
+
+cases:
+  - name: one_voxel
+    structure_path: 3D_samples/voxels/1_voxel.npz
+
+  - name: two_voxel
+    structure_path: 3D_samples/voxels/2_voxel.npz
