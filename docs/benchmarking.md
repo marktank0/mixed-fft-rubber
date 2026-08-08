@@ -66,14 +66,14 @@ Two built-in self-checks are worth knowing about:
 ## 3. Running it
 
 ```bash
-# full sweep on a big machine
-python3 benchmark_suite.py --workers 100
+# full sweep - defaults to every usable core
+python3 benchmark_suite.py
 
 # continue after an interruption (nothing is recomputed)
-python3 benchmark_suite.py --workers 100 --resume
+python3 benchmark_suite.py --resume
 
 # smoke test first - a few minutes
-python3 benchmark_suite.py --quick --workers 8 --out Results/bench_smoke
+python3 benchmark_suite.py --quick --out Results/bench_smoke
 
 # see the plan without running anything
 python3 benchmark_suite.py --dry-run
@@ -81,6 +81,11 @@ python3 benchmark_suite.py --dry-run
 # rebuild the tables from results already on disk
 python3 benchmark_suite.py --summary-only
 ```
+
+`--workers` defaults to `len(os.sched_getaffinity(0))`, which respects
+cpuset/affinity limits (`os.cpu_count()` would report the host's cores even
+inside a container with a smaller quota). Override it if you want to leave
+headroom on a shared machine.
 
 Useful options: `--structures 'path/to/*.npz'` (a glob — run several
 microstructures for spread), `--contrasts 10 100 1000`, `--configs FIX FIX+C5`,
