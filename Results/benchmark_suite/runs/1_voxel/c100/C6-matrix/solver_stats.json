@@ -1,0 +1,137 @@
+{
+ "status": "converged",
+ "tol_rel": 1e-05,
+ "tol_abs": 1e-10,
+ "max_gmres_iter": 1000,
+ "preconditioner": "reference",
+ "discretization": "fourier",
+ "precond_restrict": false,
+ "reference": "matrix",
+ "forcing": "fixed",
+ "inner_rtol": 1e-06,
+ "eta_min": null,
+ "eta_max": null,
+ "step_cuts": 0,
+ "increments": [
+  {
+   "newton_iterations": 4,
+   "krylov_iterations": [
+    67,
+    85,
+    88,
+    91
+   ],
+   "forcing_terms": [
+    1e-06,
+    1e-06,
+    1e-06,
+    1e-06
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    1776.9495805352544,
+    155.07505854411087,
+    4.07901709982309,
+    0.018483979249398326,
+    1.7330337908461975e-06
+   ],
+   "residual_p": [
+    17.260069524773154,
+    0.9753366390952163,
+    0.6172873813291962,
+    0.0035673331106968885,
+    5.424903517399718e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.0,
+   "converged": true,
+   "time_seconds": 97.22747254371643
+  },
+  {
+   "newton_iterations": 4,
+   "krylov_iterations": [
+    76,
+    107,
+    102,
+    105
+   ],
+   "forcing_terms": [
+    1e-06,
+    1e-06,
+    1e-06,
+    1e-06
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    1774.1946901672286,
+    155.93094109091894,
+    5.083866661681669,
+    0.03444309980731611,
+    5.7430423081278245e-06
+   ],
+   "residual_p": [
+    15.788089826541924,
+    1.0582502687644681,
+    0.6713577022581811,
+    0.00401993719434762,
+    8.990309258811807e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.1,
+   "converged": true,
+   "time_seconds": 86.75899529457092
+  },
+  {
+   "newton_iterations": 4,
+   "krylov_iterations": [
+    84,
+    107,
+    108,
+    110
+   ],
+   "forcing_terms": [
+    1e-06,
+    1e-06,
+    1e-06,
+    1e-06
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    1771.0091005219267,
+    156.3150671535711,
+    6.199699692737099,
+    0.05994589291154247,
+    3.1955805970502375e-05
+   ],
+   "residual_p": [
+    14.606731441455448,
+    1.1037357104387593,
+    0.7063893030330635,
+    0.004263311976519185,
+    2.2672569311766703e-06
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.2,
+   "converged": true,
+   "time_seconds": 96.01139378547668
+  }
+ ]
+}

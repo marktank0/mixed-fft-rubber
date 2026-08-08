@@ -1,0 +1,122 @@
+{
+ "status": "converged",
+ "tol_rel": 1e-05,
+ "tol_abs": 1e-10,
+ "max_gmres_iter": 1000,
+ "preconditioner": "reference",
+ "discretization": "willot",
+ "precond_restrict": true,
+ "reference": "mean",
+ "forcing": "eisenstat_walker",
+ "inner_rtol": null,
+ "eta_min": 0.001,
+ "eta_max": 0.01,
+ "step_cuts": 0,
+ "increments": [
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    11,
+    15,
+    16
+   ],
+   "forcing_terms": [
+    0.01,
+    0.002104099448157186,
+    0.001
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    186.01888241504162,
+    11.520034152988318,
+    0.04284256983832472,
+    1.4742952102062923e-05
+   ],
+   "residual_p": [
+    17.260069524773154,
+    0.5004016483251253,
+    0.002221760131419855,
+    2.160822124938464e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.0,
+   "converged": true,
+   "time_seconds": 21.597811460494995
+  },
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    11,
+    15,
+    18
+   ],
+   "forcing_terms": [
+    0.01,
+    0.002070175564959734,
+    0.001
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    179.23268885141923,
+    11.114183439554328,
+    0.03534211905859828,
+    1.135667318656691e-05
+   ],
+   "residual_p": [
+    15.77462808553005,
+    0.43349374716043165,
+    0.0017391214310280203,
+    1.7628110454426102e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.1,
+   "converged": true,
+   "time_seconds": 26.285524368286133
+  },
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    11,
+    16,
+    21
+   ],
+   "forcing_terms": [
+    0.01,
+    0.0020994786599016955,
+    0.001
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    173.75312432593668,
+    10.932924523020745,
+    0.03153152251829695,
+    1.1205236231284519e-05
+   ],
+   "residual_p": [
+    14.54536601600642,
+    0.38656427802050697,
+    0.001437663755419858,
+    1.8455043875663653e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.2,
+   "converged": true,
+   "time_seconds": 27.06914210319519
+  }
+ ]
+}
