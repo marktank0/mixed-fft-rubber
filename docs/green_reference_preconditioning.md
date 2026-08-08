@@ -327,6 +327,73 @@ while being a 29x iteration / 55x wall-time accelerator over no
 preconditioning. The pre-fix result is wrong by **+17.4 %** in
 \(\bar P_{11}\).
 
+**4. The decisive test: on a homogeneous body the restricted symbol IS the
+operator inverse.**
+
+This is the sharpest available check, and it does not depend on any claim
+about which answer is correct. If \(\mathbb{K}(x) = \mathbb{K}_0\) everywhere,
+then \(\widehat{\mathcal{G}}\mathbb{K}_0\widehat{\mathcal{G}}\) *is* the
+operator restricted to the compatible subspace, so \(M^{-1}A\) must act as the
+identity there. Measured on a truly homogeneous cell (both phases given
+identical E and identical Poisson ratio), with a random compatible test vector:
+
+| body | symbol | \(\lVert M^{-1}Ax - x\rVert/\lVert x\rVert\) |
+|---|---|---|
+| homogeneous | unrestricted (pre-fix) | 7.06e-01 |
+| homogeneous | **restricted (fixed)** | **6.71e-15** |
+| heterogeneous, contrast 100 | unrestricted (pre-fix) | 1.83 |
+| heterogeneous, contrast 100 | restricted (fixed) | 3.83e+01 |
+
+Only the restricted symbol has the defining property. `test_preconditioner.py`
+asserts this.
+
+The last row is the cost of correctness, and explains the runtime regression
+below: on a *heterogeneous* body the restricted symbol is a much poorer
+approximate inverse than the unrestricted one appeared to be. That is not a
+defect. The restricted preconditioner is approximating the inverse of the real,
+ill-conditioned compatible problem, whose conditioning scales with phase
+contrast — the classical FFT-homogenization difficulty. The unrestricted symbol
+looked better behaved only because it was preconditioning a different and
+easier operator, and converging to the wrong answer.
+
+### Performance consequence, and what to do about it
+
+Correcting the preconditioner makes the solver substantially more expensive,
+and the gap grows with contrast. Measured (N=31, 3 increments, structure
+`1_voxel`, total Krylov iterations):
+
+| contrast | legacy (C5) | corrected (C5) | corrected, `reference="matrix"` |
+|---|---|---|---|
+| 10 | 115 | 131 | 112 |
+| 100 | 447 | 1388 | 1145 |
+| 500 | 1736 | 34818* | 15431* |
+
+\* truncated by the benchmark's 1000-iteration cap; see below.
+
+Two things follow.
+
+**The reference tangent now matters, a lot.** With `reference="mean"` at
+contrast 100 and \(\phi = 8.9\,\%\), \(\mathbb{K}_0 \approx 10\,\mathbb{K}_\text{matrix}\)
+— the average is dominated by the stiff phase, so *every* voxel is badly
+preconditioned. With `reference="matrix"` the 91 % of the cell that is matrix
+is preconditioned near-exactly and only the filler is left as a
+low-volume-fraction perturbation. Measured gain in the corrected family:
+1.21x at contrast 100, **2.26x at contrast 500** (Newton 105 -> 47, step cuts
+6 -> 2). This is exactly the D5 argument from the plan document, and it only
+became visible once the preconditioner was solving the right problem.
+
+**Iteration caps sized for the legacy preconditioner are now far too tight.**
+The corrected solver needs several hundred to a few thousand Krylov iterations
+per solve at contrast >= 500, against ~85 for the legacy one. A cap of 1000
+(the production default) makes every solve "fail", which triggers load-step
+cutting, which exhausts the sub-step budget and reports the case as failed —
+a cascade that looks like a robustness collapse but is purely the cap.
+
+The open lever is a better preconditioner, not reverting: `reference="matrix"`
+as the production default, and the Green-Jacobi form
+\(D^{-1/2}G_0^{-1}D^{-1/2}\) noted in the literature section, which is
+designed for exactly this situation and remains unimplemented.
+
 ### Impact on existing results
 
 **Every run produced with `preconditioner="reference"` is affected**, which
