@@ -15,10 +15,10 @@ independent single-threaded process, scheduled over a process pool. Results are
 appended to a JSONL file as they complete, so an interrupted sweep loses
 nothing and can be resumed.
 
-    python3 benchmark_suite.py --workers 100
-    python3 benchmark_suite.py --workers 100 --resume        # continue a sweep
-    python3 benchmark_suite.py --quick --workers 8           # smoke test
-    python3 benchmark_suite.py --dry-run                     # show the plan
+    python3 benchmark_suite.py                    # uses every usable core
+    python3 benchmark_suite.py --resume           # continue an interrupted sweep
+    python3 benchmark_suite.py --quick            # smoke test
+    python3 benchmark_suite.py --dry-run          # show the plan
 
 IMPORTANT - two families of configuration are reported separately:
 
@@ -163,6 +163,16 @@ def estimate_memory_mb(N, gmres_restart, willot=False):
     basis = float(gmres_restart)*10*cells*8
     workspace = 30*cells*16
     return (ghat + k4 + symbol + basis + workspace)/1e6
+
+
+def default_workers():
+    """Usable cores. sched_getaffinity respects cpuset/affinity limits, which
+    os.cpu_count() ignores - it reports the host's cores even inside a
+    container with a smaller quota."""
+    try:
+        return max(1, len(os.sched_getaffinity(0)))
+    except AttributeError:
+        return max(1, os.cpu_count() or 1)
 
 
 def available_memory_mb():
@@ -453,7 +463,9 @@ def main():
                     help="GMRES restart length. Caps the Krylov basis, which is the "
                          "largest per-worker allocation at high N (default: solver's "
                          "own memory-aware choice, ~40 at N=63 = 800 MB per worker)")
-    ap.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1))
+    ap.add_argument("--workers", type=int, default=default_workers(),
+                    help="parallel runs (default: all usable cores). Each run is "
+                         "single-threaded, so this is the real parallelism.")
     ap.add_argument("--quick", action="store_true",
                     help="smoke test: 2 contrasts, 1 increment, core configs only")
     ap.add_argument("--out", default="Results/benchmark_suite")
