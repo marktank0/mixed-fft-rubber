@@ -18,5 +18,6 @@
  "filler_strain": 0.0,
  "F11_min": 1.0,
  "F11_max": 1.0,
- "wall_seconds": 855.5720310211182
+ "wall_seconds": 855.5720310211182,
+ "cap_hit": true
 }

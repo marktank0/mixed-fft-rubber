@@ -1,7 +1,7 @@
 {
- "git_revision": "709fede73cb2f954bd7eef84c30c2e517c61f3f8-dirty",
+ "git_revision": "005d93420f5d5a603c9be4c77a6ecd38f53b3721-dirty",
  "baseline_revision": "3672bcdc5a654cb4911f3697641e0b600bba2cb7",
- "created": "2026-08-08 10:26:39",
+ "created": "2026-08-08 10:59:12",
  "N": 31,
  "increments": 3,
  "contrasts": [
@@ -14,7 +14,7 @@
  "structures": [
   "3D_samples/voxels/1_voxel.npz"
  ],
- "workers": 100,
+ "workers": 4,
  "runs_planned": 65,
  "configs": [
   {

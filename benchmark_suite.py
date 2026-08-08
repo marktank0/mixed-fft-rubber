@@ -42,6 +42,7 @@ for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
 
 import argparse
 import contextlib
+import signal
 import glob
 import json
 import subprocess
@@ -241,7 +242,12 @@ def run_one(task):
     os.makedirs(out_dir, exist_ok=True)
     log_path = os.path.join(out_dir, "run.log")
 
+    timeout = int(task.get("timeout") or 0)
     try:
+        if timeout > 0:
+            signal.signal(signal.SIGALRM, _on_alarm)
+            signal.alarm(timeout)
+
         if task["solver"] == "base":
             ensure_baseline()
             import fg._baseline.mxfft as solver_mod
@@ -267,8 +273,13 @@ def run_one(task):
                     **kwargs
                 )
 
+        signal.alarm(0)
         stats = prob.solver_stats
         kry = [k for inc in stats.get("increments", []) for k in inc.get("krylov_iterations", [])]
+        # a solve that hit the iteration cap did not converge: the solver then
+        # cuts the load step, so any run with cap_hit is TRUNCATED and its cost
+        # is a lower bound, not a measurement
+        record["cap_hit"] = bool(kry) and max(kry) >= task["max_gmres_iter"]
         record.update({
             "status": stats.get("status", "unknown"),
             "krylov_total": int(sum(kry)),
@@ -290,16 +301,31 @@ def run_one(task):
             record["filler_strain"] = float(dev[task_mask(task)].mean()) if task_mask(task) is not None else None
             record["F11_min"] = float(F[0, 0].min())
             record["F11_max"] = float(F[0, 0].max())
+    except RunTimeout:
+        record.update({"status": "TIMEOUT", "cap_hit": None,
+                       "error": "exceeded {} s".format(timeout)})
+        with open(log_path, "a") as log:
+            log.write("\n*** run exceeded the {} s timeout ***\n".format(timeout))
     except Exception as exc:
         record.update({"status": "ERROR", "error": "{}: {}".format(type(exc).__name__, exc),
                        "traceback": traceback.format_exc()})
         with open(log_path, "a") as log:
             log.write("\n" + traceback.format_exc())
+    finally:
+        signal.alarm(0)
 
     record["wall_seconds"] = time.time() - started
     with open(os.path.join(out_dir, "result.json"), "w") as fh:
         json.dump(record, fh, indent=1)
     return record
+
+
+class RunTimeout(Exception):
+    pass
+
+
+def _on_alarm(_signum, _frame):
+    raise RunTimeout()
 
 
 _MASK_CACHE = {}
@@ -347,6 +373,7 @@ def build_tasks(args):
                                        else args.max_gmres_iter),
                     "out_dir": out_dir,
                     "gmres_restart": args.gmres_restart,
+                    "timeout": args.timeout,
                 })
     # longest first: the highest contrasts dominate the critical path
     tasks.sort(key=lambda t: (-t["contrast"], t["config"]))
@@ -391,7 +418,13 @@ def summarise(results, out, contrasts):
              "Speed-up is within a family only (legacy and corrected do not solve the",
              "same problem: the legacy preconditioner converges to a polluted solution).",
              "`incompat` is the non-gradient fraction of the converged fluctuation field;",
-             "it should be ~0 for a physical solution.", ""]
+             "it should be ~0 for a physical solution.",
+             "",
+             "**!** marks a run in which some solve hit the Krylov iteration cap. Its",
+             "cost is a LOWER BOUND, not a measurement: the solver treats a capped",
+             "solve as failed and cuts the load step, so the run is truncated and any",
+             "speed-up computed from it is meaningless. Re-run those points with a",
+             "larger --max-gmres-iter.", ""]
 
     for structure in structures:
         lines += ["## structure: {}".format(structure), ""]
@@ -413,11 +446,16 @@ def summarise(results, out, contrasts):
                         lines.append("| {} | {} | ERROR | | | | {:.0f} | | |".format(
                             contrast, cfg, r.get("wall_seconds", 0)))
                         continue
+                    truncated = bool(r.get("cap_hit"))
                     sp = ""
                     if ref and ref.get("krylov_total") and r.get("krylov_total"):
-                        sp = "{:.2f}x".format(ref["krylov_total"]/r["krylov_total"])
-                    lines.append("| {} | {} | {} | {} | {} | {} | {:.0f} | {} | {} |".format(
-                        contrast, cfg, r.get("status", "?"), r.get("krylov_total", ""), sp,
+                        if truncated or ref.get("cap_hit"):
+                            sp = "n/a"          # at least one side is truncated
+                        else:
+                            sp = "{:.2f}x".format(ref["krylov_total"]/r["krylov_total"])
+                    lines.append("| {} | {} | {} | {}{} | {} | {} | {:.0f} | {} | {} |".format(
+                        contrast, cfg, r.get("status", "?"), r.get("krylov_total", ""),
+                        " **!**" if truncated else "", sp,
                         r.get("newton_total", ""), r.get("wall_seconds", 0),
                         "{:.6f}".format(r["P11"]) if r.get("P11") is not None else "",
                         "{:.1e}".format(r["incompatible"]) if r.get("incompatible") is not None else ""))
@@ -427,7 +465,7 @@ def summarise(results, out, contrasts):
     with open(md, "w") as fh:
         fh.write("\n".join(lines) + "\n")
 
-    cols = ["structure", "contrast", "config", "family", "status", "krylov_total",
+    cols = ["structure", "contrast", "config", "family", "status", "cap_hit", "krylov_total",
             "krylov_max_per_solve", "newton_total", "step_cuts", "wall_seconds",
             "solver_seconds", "P11", "F11", "incompatible", "filler_strain",
             "F11_min", "F11_max", "N", "increments"]
@@ -451,11 +489,19 @@ def main():
     ap.add_argument("--configs", nargs="*", help="subset of config names to run")
     ap.add_argument("--N", type=int, default=31)
     ap.add_argument("--increments", type=int, default=3)
-    ap.add_argument("--max-gmres-iter", type=int, default=1000,
-                    help="Krylov iteration cap per solve (default 1000, matching "
-                         "production). On hitting it the solver cuts the load step "
-                         "and retries, which is the intended recovery - raising it "
-                         "lets a stagnating solve grind instead.")
+    ap.add_argument("--max-gmres-iter", type=int, default=20000,
+                    help="Krylov iteration cap per solve. This is a SAFETY VALVE, "
+                         "not a tuning knob: a solve that hits it is reported as "
+                         "failed, the load step is cut, and the run's cost becomes "
+                         "a lower bound rather than a measurement. The corrected "
+                         "preconditioner needs hundreds to thousands of iterations "
+                         "per solve at high contrast, so a cap sized for the legacy "
+                         "preconditioner (1000) silently truncates it. Any run that "
+                         "hits the cap is flagged cap_hit in the output.")
+    ap.add_argument("--timeout", type=int, default=0,
+                    help="per-run wall-clock limit in seconds (0 = none). Stops one "
+                         "pathological point from holding up a large sweep; such a "
+                         "run is recorded with status TIMEOUT.")
     ap.add_argument("--control-max-gmres-iter", type=int, default=50000,
                     help="separate, much larger cap for the unpreconditioned control, "
                          "which legitimately needs thousands of iterations")

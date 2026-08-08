@@ -52,6 +52,28 @@ GMRES, which provably cannot leave the compatible subspace and is therefore
 unbiased ground truth. It is slow — roughly 30× the iterations — so it is off
 by default. Use it when you want to certify an answer rather than compare cost.
 
+### Truncated runs: the `**!**` flag
+
+A solve that hits the Krylov iteration cap is treated by the solver as a
+*failed* solve: it cuts the load step and retries. So a run in which any solve
+hit the cap is **truncated** — its iteration count is a lower bound, not a
+measurement, and a speed-up computed from it is meaningless. The suite records
+`cap_hit` per run, marks such rows `**!**` in `summary.md`, and prints `n/a`
+for the speed-up whenever either side of the comparison is truncated.
+
+**This is the single most important thing to check before trusting a number.**
+It is also a trap the earlier version of this suite fell into: `--max-gmres-iter`
+defaulted to 1000, which is ample for the legacy preconditioner (only 1 of 35
+legacy runs ever reached it) but far too tight for the corrected one, which
+needs hundreds to thousands of iterations per solve at contrast >= 500. Every
+corrected run at contrast >= 500 was silently truncated, producing a cascade —
+capped solve -> load-step cut -> sub-step budget exhausted -> case reported
+`failed` — that looked like a robustness collapse but was purely the cap.
+
+The default is now 20000, i.e. a safety valve rather than a tuning knob. Pair
+it with `--timeout` on a large sweep so one pathological point cannot hold up
+the rest (such a run is recorded with status `TIMEOUT`).
+
 Two built-in self-checks are worth knowing about:
 
 - `baseline` vs `baseline-new` should agree **bitwise**. They are the pinned
@@ -89,7 +111,8 @@ headroom on a shared machine.
 
 Useful options: `--structures 'path/to/*.npz'` (a glob — run several
 microstructures for spread), `--contrasts 10 100 1000`, `--configs FIX FIX+C5`,
-`--N`, `--increments`, `--control`, `--gmres-restart`.
+`--N`, `--increments`, `--control`, `--gmres-restart`, `--max-gmres-iter`,
+`--timeout`.
 
 ### Memory is the binding constraint, not cores
 
@@ -138,9 +161,9 @@ per run, so a sweep that dies halfway keeps everything completed so far;
 `--resume` picks up from there. Because each run logs to its own `run.log`,
 100 parallel runs do not interleave their output.
 
-Recorded per run: status, total and per-solve Krylov counts, Newton count, step
-cuts, wall and solver time, the full `P11` curve, `incompat`, mean filler
-strain, and `F11` min/max.
+Recorded per run: status, `cap_hit`, total and per-solve Krylov counts, Newton
+count, step cuts, wall and solver time, the full `P11` curve, `incompat`, mean
+filler strain, and `F11` min/max.
 
 ---
 
