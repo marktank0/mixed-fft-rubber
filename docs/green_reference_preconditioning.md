@@ -394,6 +394,95 @@ as the production default, and the Green-Jacobi form
 \(D^{-1/2}G_0^{-1}D^{-1/2}\) noted in the literature section, which is
 designed for exactly this situation and remains unimplemented.
 
+### Why it is slow: ruled out, and what remains
+
+The corrected preconditioner is far more expensive at high contrast. Everything
+below was measured at contrast 500, N=31, `reference="matrix"`, so that
+"something must be misconfigured" could be tested rather than assumed.
+
+**Ruled out — none of these is the cause:**
+
+| suspect | measurement | verdict |
+|---|---|---|
+| Krylov iteration cap | see the benchmarking note | real, but an artifact of the *benchmark*, now fixed |
+| pseudo-inverse / `rcond` | clean rank 4 per frequency, ~1e14 gap to the discarded modes; retained-block condition 17 (restricted) vs 3 (unrestricted) | healthy |
+| GMRES restart length | 100 -> 2986 Krylov, 400 -> 1960, 1000 -> 3685 | worth setting 400; explains ~1.5x, not the gap |
+| inner tolerance too tight | tightening the C5 window to `[1e-5,1e-3]` made the first solve run 7830 iterations without reaching 6.1e-3 | the loose default is a *mitigation*, not the cause |
+| outer tolerance too tight | `tol_rel` 1e-3 vs 1e-5: 1629 vs 1960 Krylov, P11 differs 1.6e-4 | only 1.2x; not the cause |
+| the Krylov algorithm | gmres(100) 6.82e-3, gmres(300) 6.30e-3, lgmres 7.09e-3, gcrotmk 6.91e-3, bicgstab 1.03e-2 — all plateau in the same band on a fixed budget | not a solver-choice problem |
+| a structural defect in the residual | see below | none found |
+
+**The residual anatomy.** Dissecting the leftover residual at the plateau:
+
+```
+true relative residual at the plateau      6.818e-03
+  carried by the F-block                   6.818e-03   (p-block only 9.6e-05)
+  incompatible fraction of r_F             4.2e-14     -> fully reachable by A
+  zero-frequency share                     0.001%      -> not a macroscopic-mode bug
+  ||M^-1 r||/||M^-1 b|| vs ||r||/||b||     ratio 1.39  -> M^-1 is NOT blind to it
+```
+
+The leftover residual is compatible, reachable, spread across frequencies, and
+plainly visible to the preconditioner — and GMRES still cannot reduce it. There
+is no hidden structural defect: this is genuine ill-conditioning.
+
+**What it is.** The eigenvalues of \(M^{-1}A\) confirm the textbook result:
+
+| quantity | measured |
+|---|---|
+| \(\lambda_\max(M^{-1}A)\) at contrast 500 | **~572** |
+
+Green-preconditioner theory bounds the preconditioned spectrum by the *local
+ratios* \(\mathbb{K}(x)/\mathbb{K}_0\), so a single homogeneous reference gives a
+condition number of order the phase contrast. 572 for \(\chi = 500\) reproduces
+that to within 15 %. The method is behaving exactly as published; it simply
+has an O(contrast) ceiling, and the legacy preconditioner appeared immune only
+because it was preconditioning a different, easier operator.
+
+### Green-Jacobi: implemented, and it does NOT transfer
+
+Ladecky et al. (arXiv:2508.02613) introduce Green-Jacobi,
+\(M^{-1} = D^{-1/2}G_0^{-1}D^{-1/2}\), precisely because the plain Green
+preconditioner degrades on high-contrast data. It is implemented here as
+`preconditioner="green_jacobi"`, with \(d(x)\) the Frobenius norm of the local
+tangent (the operator is matrix-free, so there is no assembled diagonal) and
+the reference built from the *scaled* tangent \(\mathbb{K}(x)/d(x)\).
+
+`test_green_jacobi.py` confirms it is correctly built:
+
+| check | result |
+|---|---|
+| collapses onto Green on a homogeneous body | 1.57e-12 |
+| output stays compatible (homogeneous) | 4.7e-16 |
+| output stays compatible (contrast 500) | 4.7e-16 |
+
+**But it makes things worse, not better.** At contrast 500 its *first solve
+alone* exceeded 1950 iterations without converging, against 1960 for the whole
+Green run (9 Newton steps); its approximate-inverse quality is also worse
+(\(\lVert M^{-1}Ax-x\rVert/\lVert x\rVert\) = 103 vs 38).
+
+There is a structural reason to expect this, and it is worth recording:
+
+1. **Ladecky et al. solve a displacement/FE system, in which every field is
+   admissible.** There is no compatibility constraint, the operator is
+   full-rank SPD, and \(D\) is the genuine diagonal of an assembled stiffness
+   matrix — a local quantity.
+2. **This solver's unknown is the deformation gradient**, whose F-block
+   operator is \(\mathcal{G}\mathbb{K}\) with \(\mathcal{G}\) a *global*
+   projector. The diagonal of that operator is not \(\mathbb{K}(x)\), so no
+   purely local \(d(x)\) is its Jacobi diagonal.
+3. **\(D^{-1/2}\) is a pointwise scaling and does not preserve
+   compatibility**, so the result must be re-projected — which costs an extra
+   FFT round trip and partially undoes the scaling it just applied.
+
+The conclusion is that the compatibility constraint is the root cause of both
+problems: it is what makes the operator singular (the original defect) and what
+blocks the published high-contrast preconditioner. The formulation that removes
+it is the displacement-based one (DBFFT, Lucarini & Segurado 2019), where the
+system is full-rank and Hermitian and Green-Jacobi applies as published. That
+is a solver-core rewrite and remains out of scope, but it is now the
+best-supported direction rather than a speculative one.
+
 ### Impact on existing results
 
 **Every run produced with `preconditioner="reference"` is affected**, which
