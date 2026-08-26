@@ -99,8 +99,17 @@ def run_from_config(
     log_to_file_override=None,
     on_existing_override=None,
     dry_run=False,
+    config=None,
 ):
-    config = load_config(config_path)
+    """Run every case in a YAML config.
+
+    `config` lets a caller pass an already-loaded (and possibly expanded)
+    config dictionary - contrast_sweep.py builds its cases in memory and hands
+    them here, so the sweep gets the same defaults merging, path resolution,
+    resolved-config dump and worker pool as a plain batch run.
+    """
+    if config is None:
+        config = load_config(config_path)
     apply_thread_env(config)
     run_plan = build_cases(config, base_path_override=base_path_override, mode_override=mode_override)
     if max_workers_override is not None:

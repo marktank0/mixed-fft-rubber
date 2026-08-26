@@ -15,6 +15,7 @@ FFT_simulation/
     batch_run.py            YAML-driven runner (one or many cases)
     traction.py             foreground single-case runner
     run_case.py             one simulation case, start to finish
+    contrast_sweep.py       every structure x every filler/matrix contrast
     benchmark_suite.py      solver-improvement benchmark sweep
     Run_configs/*.yaml      run configurations
     Run_configs/Charges/    charge (material + load case) files
