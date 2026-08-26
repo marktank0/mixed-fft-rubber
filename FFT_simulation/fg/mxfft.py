@@ -29,9 +29,12 @@ from fg.io_paths import (
 from fg.preconditioning import (
     DISCRETIZATIONS,
     REFERENCE_MODES,
+    apply_green_jacobi_preconditioner,
     apply_mixed_reference_preconditioner,
     build_Ghat4,
+    build_green_jacobi_symbol,
     build_mixed_reference_symbol,
+    local_jacobi_scale,
     reference_average,
 )
 from fg.vtk_export import save_vti_cell_fields, solution_fields
@@ -264,8 +267,10 @@ class FFTSolver:
     ):
         """ """
         #
-        if preconditioner not in (None, "none", "gmres", "reference"):
-            raise ValueError("Unknown preconditioner {!r}; use None, 'gmres', or 'reference'.".format(preconditioner))
+        if preconditioner not in (None, "none", "gmres", "reference", "green_jacobi"):
+            raise ValueError(
+                "Unknown preconditioner {!r}; use None, 'gmres', 'reference' or "
+                "'green_jacobi'.".format(preconditioner))
         if reference not in REFERENCE_MODES:
             raise ValueError("Unknown reference {!r}; use one of {}.".format(reference, REFERENCE_MODES))
         if forcing not in ("fixed", "eisenstat_walker"):
@@ -440,6 +445,22 @@ class FFTSolver:
             self.iter_num = 0
             Aop = sp.LinearOperator(shape=(num_tol,num_tol),matvec=KdX,dtype='float')
             Mop = None
+            if preconditioner == "green_jacobi":
+                # Green-Jacobi: divide out the local stiffness before applying
+                # the Green symbol, so the local-to-reference ratios that bound
+                # the preconditioned spectrum become O(1) instead of O(contrast)
+                d = local_jacobi_scale(state["K4"])
+                zero_mode_free = [3*i + j for i, j in self.pb.stress_control] + [9]
+                inv_symbol = build_green_jacobi_symbol(
+                    Ghat4, state["K4"], state["JFmT"], state["Kappa_inv"], d,
+                    reference=reference, matrix_mask=mask_a, filler_mask=mask_b,
+                    zero_mode_free_components=zero_mode_free,
+                )
+                Mop = sp.LinearOperator(
+                    shape=(num_tol, num_tol),
+                    matvec=lambda vec: apply_green_jacobi_preconditioner(vec, inv_symbol, d, Ghat4),
+                    dtype='float',
+                )
             if preconditioner == "reference":
                 K_ref = reference_average(state["K4"], reference, mask_a, mask_b)
                 J_ref = reference_average(state["JFmT"], reference, mask_a, mask_b)
@@ -455,7 +476,7 @@ class FFTSolver:
                     matvec=lambda vec: apply_mixed_reference_preconditioner(vec, inv_symbol),
                     dtype='float',
                 )
-            if preconditioner in ("gmres", "reference"):
+            if preconditioner in ("gmres", "reference", "green_jacobi"):
                 gmres_callback = self.__gmres_progress_counter(label="gmres")
                 # scipy's maxiter counts restart cycles, not iterations, so
                 # convert the total-iteration cap to whole cycles
