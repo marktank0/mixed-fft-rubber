@@ -12,7 +12,7 @@ base_path: . #/home/jovyan/mixed-fft-rubber/
 
 experiment:
   name: fix_c5_c6_gmres400
-  output_root: Results/fix_c5_c6_gmres400
+  output_root: Results/fix_c5_c6_smaller_structures_v2
 
 run:
   mode: batch # cases | batch
@@ -24,7 +24,7 @@ execution:
   # Keep max_workers * ~9 GB below available RAM at N=63.
   max_workers: 100
   log_to_file: true
-  on_existing: skip # skip | overwrite | error
+  on_existing: overwrite # skip | overwrite | error
   save_resolved_config: true
   thread_env:
     OMP_NUM_THREADS: 1
@@ -36,7 +36,7 @@ execution:
 defaults:
   solver:
     type: mixed
-    N: 63
+    N: 31
     increments:
       repeat: 10
       value: 0.10
@@ -49,7 +49,7 @@ defaults:
     max_gmres_iter: 2000
     min_substep_ratio: 0.25
     #tol_rel:
-    gmres_restart: 300 #num of vectors
+    gmres_restart: 200 #num of vectors
     # FIX - Green preconditioner restricted to the compatible subspace.
     # Without it the solver converges to a null-space-polluted field
     # (incompat ~6e-1 instead of ~1e-13); see
@@ -85,11 +85,11 @@ defaults:
     field_filename: fields.vti
 
   charge:
-    path: FFT_simulation/Run_configs/Charges/Neo_1.0_E10-2500.txt
+    path: FFT_simulation/Run_configs/Charges/Neo_1.0_E10-500.txt
 
 batch:
   structures:
-    glob: microstructure_generation/3D_samples/improved_struct_v4/voxel_structures/*.npz
+    glob: microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/*.npz
     sort: name
     include: ["*_voxel.npz"]
     exclude: ["test_*"]

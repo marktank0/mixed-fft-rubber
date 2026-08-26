@@ -1,0 +1,27 @@
+{
+ "structure": "1_voxel",
+ "contrast": 100,
+ "config": "C6-mid",
+ "family": "legacy",
+ "N": 31,
+ "increments": 3,
+ "cap_hit": false,
+ "status": "converged",
+ "krylov_total": 1028,
+ "krylov_max_per_solve": 101,
+ "newton_total": 12,
+ "step_cuts": 0,
+ "solver_seconds": 253.02345204353333,
+ "P11": 2.7509713158188243,
+ "P11_curve": [
+  1.0837724660969257,
+  1.9798884178631149,
+  2.7509713158188243
+ ],
+ "F11": 1.3000000000000003,
+ "incompatible": 0.6046148077043183,
+ "filler_strain": 0.010004563436454759,
+ "F11_min": 0.9387059919511314,
+ "F11_max": 1.8425197289498982,
+ "wall_seconds": 253.94002318382263
+}

@@ -1,0 +1,122 @@
+{
+ "status": "converged",
+ "tol_rel": 1e-05,
+ "tol_abs": 1e-10,
+ "max_gmres_iter": 20000,
+ "preconditioner": "reference",
+ "discretization": "fourier",
+ "precond_restrict": false,
+ "reference": "matrix",
+ "forcing": "fixed",
+ "inner_rtol": 1e-06,
+ "eta_min": null,
+ "eta_max": null,
+ "step_cuts": 0,
+ "increments": [
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    22,
+    27,
+    25
+   ],
+   "forcing_terms": [
+    1e-06,
+    1e-06,
+    1e-06
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    185.93051205901006,
+    12.236344447490913,
+    0.04374330696068382,
+    1.3308884218998635e-06
+   ],
+   "residual_p": [
+    17.260069524773154,
+    0.2785969155607874,
+    0.002167154637523204,
+    1.4857825002317308e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.0,
+   "converged": true,
+   "time_seconds": 22.74787187576294
+  },
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    25,
+    30,
+    28
+   ],
+   "forcing_terms": [
+    1e-06,
+    1e-06,
+    1e-06
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    182.37249667411615,
+    12.753541890832201,
+    0.05175723357795263,
+    2.8294987162760444e-06
+   ],
+   "residual_p": [
+    15.782048948484325,
+    0.24139764322345095,
+    0.0029502545368831437,
+    2.4011492210759485e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.1,
+   "converged": true,
+   "time_seconds": 26.216411590576172
+  },
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    27,
+    34,
+    35
+   ],
+   "forcing_terms": [
+    1e-06,
+    1e-06,
+    1e-06
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    179.24968242797587,
+    13.121459423758907,
+    0.05968432108608265,
+    5.075483236044616e-06
+   ],
+   "residual_p": [
+    14.582176936690422,
+    0.21126945193858115,
+    0.0036016521909209014,
+    3.3032042247434994e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.2,
+   "converged": true,
+   "time_seconds": 25.799004554748535
+  }
+ ]
+}
