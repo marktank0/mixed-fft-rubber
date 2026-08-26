@@ -1,6 +1,45 @@
 MixedFFT is a FFT-based solver to calculate mechanical response for RVE. It contains two calculators, one of which is standard strain-based FFT-Galerkin solver, another one of which is mixed one with strain-pressure as unknowns 
 
 
+# Repository layout
+
+The solver and everything needed to launch it live in `FFT_simulation/`; the
+microstructures, the analysis tooling and the results stay at the repository
+root.
+
+```
+FFT_simulation/
+    fg/                     the two solvers, the preconditioner, the
+                            constitutive models (loaded relative to this
+                            package, so the working directory never matters)
+    batch_run.py            YAML-driven runner (one or many cases)
+    traction.py             foreground single-case runner
+    run_case.py             one simulation case, start to finish
+    benchmark_suite.py      solver-improvement benchmark sweep
+    Run_configs/*.yaml      run configurations
+    Run_configs/Charges/    charge (material + load case) files
+3D_samples/                 hand-made test microstructures
+microstructure_generation/  generator for the sphere-packing microstructures
+Results/                    all run output
+project_paths.py            canonical location of each of the above
+simulation_config.py        YAML -> case dictionaries
+run_case.py's helpers: result_plots.py, run_metadata.py
+```
+
+Every script resolves its inputs through `project_paths.py`, so runs can be
+started from any working directory:
+
+```bash
+python FFT_simulation/batch_run.py FFT_simulation/Run_configs/50_improved_structure.yaml
+```
+
+Relative paths inside a run config (`structure_path`, `charge.path`,
+`output_root`, `batch.structures.glob`) are resolved against the repository
+root, not against the config file and not against the working directory. Set
+`base_path` in the config, or pass `--base-path`, to point a run somewhere else
+(e.g. a server checkout).
+
+
 
 # Problem definition
 
@@ -33,7 +72,7 @@ The last one is about the material parameters and charge, called "charge.txt" as
 0.0	0.0	0.0	0.0	1.0	0.0	0.0	0.0	1.0
 ```
 
-The second line corresponds to phase 0.0; The third line is to phase 1.0. For the second line and third line, 1.0 means the constitutive model 1, which is in "fg/constitutive/1.py" or "fg/constitutive_incompressible/1.py". 6.0 and 0.5 are two material parameters. In the case of model 1.0, 6.0 is the Young's module and 0.5 is the Poisson's ratio. Fifth line is the charge, and 7th is the type, see comments after "#"
+The second line corresponds to phase 0.0; The third line is to phase 1.0. For the second line and third line, 1.0 means the constitutive model 1, which is in "FFT_simulation/fg/constitutive/1.py" or "FFT_simulation/fg/constitutive_incompressible/1.py". 6.0 and 0.5 are two material parameters. In the case of model 1.0, 6.0 is the Young's module and 0.5 is the Poisson's ratio. Fifth line is the charge, and 7th is the type, see comments after "#"
 
 Material model 1.0 is Neo-Hookean.
 
@@ -41,7 +80,7 @@ After preparing these two files, put them in one folder (we call it "problem pat
 
 # Run calculators
 
-It is better to write a script in the folder containing "fg/". 
+It is better to write a script in "FFT_simulation/", the folder containing "fg/". 
 
 1. import fft solver (standard strain-based FFT-Galerkin) or mxfft solver (mixed FFT-Galerkin) as
 
@@ -73,7 +112,7 @@ It is better to write a script in the folder containing "fg/".
 
    savemodel is a not yet finished. Just write as it is. After calculation, results of average 1st PK stress and deformation gradient are stored in  the problem path ("./problem_path/") as "P.txt" and "F.txt"
 
-several examples are given as "traction.py", "seres_shear_mix.py", "series_shear_std.py", and "foam2.py"
+several examples are given as "FFT_simulation/traction.py", "seres_shear_mix.py", "series_shear_std.py", and "foam2.py"
 
 
 
@@ -81,9 +120,9 @@ several examples are given as "traction.py", "seres_shear_mix.py", "series_shear
 
 The visualization part is not contained in current version, due to a license problem. Users can add it by himself.
 
-For example, if you have downloaded "pyevtk" from https://github.com/pyscience-projects/pyevtk (Note that the original website is https://bitbucket.org/pauloh/pyevtk), you can put the folder in "./fg/" as "./fg/pyevtk" where "evtk.py", "hl.py", "vtk.py" and "xml.py" are in.
+For example, if you have downloaded "pyevtk" from https://github.com/pyscience-projects/pyevtk (Note that the original website is https://bitbucket.org/pauloh/pyevtk), you can put the folder in "./FFT_simulation/fg/" as "./FFT_simulation/fg/pyevtk" where "evtk.py", "hl.py", "vtk.py" and "xml.py" are in.
 
-add code blocks in "./fg/fft.py"  or "./fg/mxfft.py"
+add code blocks in "./FFT_simulation/fg/fft.py"  or "./FFT_simulation/fg/mxfft.py"
 
 ```python
 

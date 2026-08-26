@@ -21,8 +21,8 @@ from file_viewers.view_npz_3d import view_npz_file
 
 # Default run settings
 # Edit these values to change the defaults used by the CLI and helper functions.
-DEFAULT_FILENAME_BASE = "2r_filled"
-DEFAULT_SAVE_DIR = "microstructure_generation/3D_samples/different_fillings"
+DEFAULT_FILENAME_BASE = "temp_test"
+DEFAULT_SAVE_DIR = "microstructure_generation/3D_samples"
 DEFAULT_BOX_SIZE = 3.0
 
 '''
@@ -39,15 +39,15 @@ DEFAULT_SEED = 5
 
 DEFAULT_MODEL1_INTENSITY = 240.0
 DEFAULT_MODEL1_RADIUS = 0.10
-DEFAULT_MODEL2_INTENSITY = 4
+DEFAULT_MODEL2_INTENSITY = 3
 DEFAULT_MODEL2_MIN_R1 = 0.25
 DEFAULT_MODEL2_MAX_R1 = 0.5
 DEFAULT_MODEL3_INTENSITY = 1.8
 DEFAULT_MODEL3_RADIUS = 0.4
 DEFAULT_SEED = 5
 
-DEFAULT_SAVE_PARTICLE_VTP = False
-DEFAULT_SAVE_UNION_VTP = False
+DEFAULT_SAVE_PARTICLE_VTP = True
+DEFAULT_SAVE_UNION_VTP = True
 DEFAULT_SAVE_SPHERES_NPZ = True
 DEFAULT_SAVE_VOXEL_NPZ = True
 # Sub-folders (under the output dir) that each output type is written into.
@@ -476,11 +476,11 @@ def visualize_combined_models(
     if show_unions:
         # Add Model 2 union (spheroids) if provided
         if model2_union is not None:
-            plotter.add_mesh(model2_union, color='blue', opacity=0.3)
+            plotter.add_mesh(model2_union, color='blue', opacity=1.0)#0.3)
         
         # Add Model 3 union if provided
         if model3_union is not None:
-            plotter.add_mesh(model3_union, color='green', opacity=0.15)
+            plotter.add_mesh(model3_union, color='green', opacity=1.0)#0.15)
     
     # Add bounding box
     box = pv.Box([0, box_size, 0, box_size, 0, box_size])

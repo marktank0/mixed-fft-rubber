@@ -1,6 +1,6 @@
 """Exact rank analysis of the mixed Newton operator (preconditioner diagnostic).
 
-Forms the real operator A from fg/mxfft.py densely at N=7 and answers, exactly:
+Forms the real operator A from FFT_simulation/fg/mxfft.py densely at N=7 and answers, exactly:
 
   - is A singular, and how large is its null space?
   - is the null space made of incompatible (non-gradient) F fields?
@@ -14,10 +14,14 @@ import numpy as np
 import scipy.fft
 import scipy.sparse.linalg as spla
 
+from project_paths import charge_path, ensure_import_paths
+
+ensure_import_paths()
+
 import fg.mxfft as mx
 
 N = 7
-CHARGE = "3D_samples/Charges/Neo_1.0_E10-1000.txt"      # contrast 100
+CHARGE = charge_path("Neo_1.0_E10-1000.txt")            # contrast 100
 PHASE = os.path.join(tempfile.mkdtemp(prefix="fg_rank_"), "small_phase.npz")
 
 rng = np.random.default_rng(0)

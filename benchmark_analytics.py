@@ -11,6 +11,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from project_paths import results_path
+
 
 VOLUME_FRACTION_PATTERN = re.compile(r"Filler volume fraction:\s*([0-9.eE+-]+)")
 
@@ -108,7 +110,7 @@ def plot_stress_vs_volume_fraction(rows, outfile, target_f11_values):
 
 
 def make_benchmark_stress_volume_plot(
-    results_dir="Results/Benchmark_v1",
+    results_dir=results_path("Benchmark_v1"),
     target_f11_values=(1.20, 1.50, 2.00),
 ):
     rows = collect_stress_volume_data(results_dir, target_f11_values)

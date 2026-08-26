@@ -5,11 +5,12 @@ Compares the pre-change solver against Eisenstat-Walker forcing terms and the
 three reference-tangent modes, across a ladder of filler/matrix stiffness
 contrasts. Reports total Krylov iterations, Newton iterations and wall time.
 
-Run from the repository root (the constitutive loader uses relative paths):
+Runnable from any working directory:
 
     FFT_WORKERS=2 python3 benchmark_c5c6.py [--N 31] [--out DIR]
 
-The pre-change solver is materialised from git as `fg/_mxfft_baseline.py`
+The pre-change solver is materialised from git as
+`FFT_simulation/fg/_mxfft_baseline.py`
 (gitignored) so the comparison is against real committed code, not a
 reimplementation. See docs/inexact_newton_and_reference_tangent.md.
 """
@@ -23,7 +24,11 @@ import time
 
 import numpy as np
 
-BASELINE_MODULE = os.path.join("fg", "_mxfft_baseline.py")
+from project_paths import CHARGES_DIR, ensure_import_paths, FG_DIR, PROJECT_ROOT, results_path, VOXELS_DIR
+
+ensure_import_paths()
+
+BASELINE_MODULE = os.path.join(FG_DIR, "_mxfft_baseline.py")
 BASELINE_REV = "HEAD"
 
 CHARGE_TEMPLATE = """#first two lines: model:---0)model num 1) p1.. 2)p2...
@@ -39,14 +44,33 @@ CHARGE_TEMPLATE = """#first two lines: model:---0)model num 1) p1.. 2)p2...
 LADDER = [("10", 100.0), ("100", 1000.0), ("500", 5000.0), ("1000", 10000.0)]
 
 
+def _solver_source(rev):
+    """`git show` the mixed solver out of `rev`, wherever fg/ lived back then.
+
+    The solver moved to FFT_simulation/fg/ partway through the project's
+    history, so the path is a property of the commit being read, not of the
+    current tree.
+    """
+    tried = ("FFT_simulation/fg/mxfft.py", "fg/mxfft.py")
+    for path in tried:
+        try:
+            src = subprocess.check_output(
+                ["git", "show", "{}:{}".format(rev, path)],
+                cwd=PROJECT_ROOT, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            continue
+        return src, path
+    raise RuntimeError("no mixed solver in {} at any of {}".format(rev, tried))
+
+
 def ensure_baseline(rev=BASELINE_REV):
     """Materialise the pre-change solver from git so we compare against real code."""
     if os.path.exists(BASELINE_MODULE):
         return
-    src = subprocess.check_output(["git", "show", "{}:fg/mxfft.py".format(rev)])
+    src, in_commit = _solver_source(rev)
     with open(BASELINE_MODULE, "wb") as fh:
         fh.write(src)
-    print("materialised baseline solver from {}:fg/mxfft.py".format(rev))
+    print("materialised baseline solver from {}:{}".format(rev, in_commit))
 
 
 def ensure_charge(contrast_label, E, charge_dir):
@@ -84,10 +108,10 @@ def run(tag, module, structure, charge, N, incre, out_dir, **kw):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--N", type=int, default=31)
-    ap.add_argument("--structure", default="3D_samples/voxels/1_voxel.npz")
-    ap.add_argument("--charge-dir", default="3D_samples/Charges")
+    ap.add_argument("--structure", default=os.path.join(VOXELS_DIR, "1_voxel.npz"))
+    ap.add_argument("--charge-dir", default=CHARGES_DIR)
     ap.add_argument("--increments", type=int, default=3)
-    ap.add_argument("--out", default="Results/bench_c5c6")
+    ap.add_argument("--out", default=results_path("bench_c5c6"))
     ap.add_argument("--contrasts", nargs="*", default=[c for c, _ in LADDER])
     args = ap.parse_args()
 

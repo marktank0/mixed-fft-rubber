@@ -1,7 +1,7 @@
 # Mixed FFT Solver Improvements: What Changed, How It Works, and Why
 
 This document describes every change applied to the mixed FFT solver
-(`fg/mxfft.py` and supporting files) during the high-contrast convergence
+(`FFT_simulation/fg/mxfft.py` and supporting files) during the high-contrast convergence
 work, the mechanism behind each change, the theory it rests on, and the
 validation that was performed. The original planning document with the
 full failure-mode diagnosis and literature survey is
@@ -25,8 +25,8 @@ partial results survive interruption).
 
 ### 1.1 Batched constitutive evaluation (`umat_field`)
 
-**Files:** `fg/constitutive_incompressible/1.py` (Neo-Hookean),
-`fg/constitutive_incompressible/2.py` (Mooney-Rivlin), `fg/mxfft.py`.
+**Files:** `FFT_simulation/fg/constitutive_incompressible/1.py` (Neo-Hookean),
+`FFT_simulation/fg/constitutive_incompressible/2.py` (Mooney-Rivlin), `FFT_simulation/fg/mxfft.py`.
 
 **Before.** `constitutive()` looped over all N^3 voxels in Python
 (29,791 at N=31; 250,047 at N=63), calling `umat(f, p, params)` per voxel.
@@ -55,7 +55,7 @@ loop per voxel, was rewritten as closed-form batched einsums of the same
 `docs/mooney_rivlin_incompressible_implementation.md`.
 
 The original per-voxel `umat(f, yl, parameters)` signature is kept as a
-thin wrapper around `umat_field`, so the standard solver (`fg/fft.py`)
+thin wrapper around `umat_field`, so the standard solver (`FFT_simulation/fg/fft.py`)
 and older validation scripts continue to work unchanged.
 
 `need_tangent=False` skips the tangent `K4` (by far the most expensive
@@ -102,7 +102,7 @@ wasted array copies. Two changes:
 - shifts are now applied to the spatial axes only (provably identical
   output);
 - the transforms use `scipy.fft.fftn/ifftn` with `workers=-1`
-  (multithreaded), in both `fg/mxfft.py` and `fg/preconditioning.py`.
+  (multithreaded), in both `FFT_simulation/fg/mxfft.py` and `FFT_simulation/fg/preconditioning.py`.
 
 **Why this matters.** After 1.1-1.3, profiling showed the FFTs dominate:
 at N=31 one Krylov iteration cost ~85 ms in the operator (`KdX`) plus
@@ -120,7 +120,7 @@ at N=31 went from 97 s to 37 s wall time with results identical to
 
 ## 2. Residual-based convergence and fail-loud error handling
 
-**File:** `fg/mxfft.py` (`newton_increment`).
+**File:** `FFT_simulation/fg/mxfft.py` (`newton_increment`).
 
 **Before.** The Newton loop stopped when the *step size* was small:
 `norm(dF)/norm(F) < 5e-5`. If the inner Krylov solver returned a
@@ -184,7 +184,7 @@ corrupt rows are saved, and `plot_p11_vs_phr.py` skips the folder.
 
 ## 3. Globalized Newton: det(F) guard and backtracking line search
 
-**File:** `fg/mxfft.py` (`newton_increment`).
+**File:** `FFT_simulation/fg/mxfft.py` (`newton_increment`).
 
 **Before.** The full Newton step was always applied (`F += dF`,
 `p += dp`). At high contrast, thin matrix ligaments between stiff
@@ -231,7 +231,7 @@ previously produced inverted voxels - and full steps afterwards.
 
 ## 4. Adaptive load stepping with rollback
 
-**File:** `fg/mxfft.py` (increment loop in `calculate`).
+**File:** `FFT_simulation/fg/mxfft.py` (increment loop in `calculate`).
 
 **Before.** The load path was a fixed list of increments (e.g. ten steps
 of 0.1 in F11). Whether a 0.1 step lies inside Newton's convergence
@@ -274,7 +274,7 @@ initial step sizes) when moving to strongly networked microstructures.
 
 ## 5. Observability, incremental saving, and live logs
 
-**Files:** `fg/mxfft.py`, `run_case.py`, `run_metadata.py`,
+**Files:** `FFT_simulation/fg/mxfft.py`, `FFT_simulation/run_case.py`, `run_metadata.py`,
 `plot_p11_vs_phr.py`, `simulation_config.py`.
 
 - **`solver_stats.json`** is written next to `output.csv` for every run:
@@ -303,7 +303,7 @@ initial step sizes) when moving to strongly networked microstructures.
 ## 6. Solver settings (YAML)
 
 The robustness knobs are plumbed through `simulation_config.py` ->
-`run_case.py` -> `FFTSolver.calculate`. In a run config, under the
+`FFT_simulation/run_case.py` -> `FFTSolver.calculate`. In a run config, under the
 `solver:` block of a case (or `defaults:`):
 
 | setting | default | meaning |
@@ -321,7 +321,7 @@ stopping scenario (cap exceeded, cuts exhausted, external kill).
 
 ## 7. Memory-aware GMRES restart length
 
-**File:** `fg/mxfft.py`.
+**File:** `FFT_simulation/fg/mxfft.py`.
 
 The GMRES restart length was hardcoded at 100. The Krylov basis is
 `(restart+1) x (10 N^3)` doubles: ~240 MB at N=31 but **1.9 GiB at
@@ -384,11 +384,11 @@ Validation summary (all on the same structure/charge unless noted):
 
 | file | change |
 |---|---|
-| `fg/constitutive_incompressible/1.py` | batched `umat_field` (Neo-Hookean); `umat` kept as wrapper |
-| `fg/constitutive_incompressible/2.py` | batched `umat_field` (Mooney-Rivlin, closed-form tangent); `umat` kept as wrapper |
-| `fg/mxfft.py` | vectorized Ghat4/constitutive/averages; scipy.fft backend; residual-based Newton with det-guard + line search; adaptive sub-stepping with rollback; statuses; `solver_stats.json`; incremental saving; memory-aware GMRES restart; new `calculate()` parameters |
-| `fg/preconditioning.py` | multithreaded scipy.fft, spatial-axes-only shifts; `reference_average()` for the C6 reference-tangent modes |
-| `run_case.py` | passes new solver settings; line-buffered `run.log`; passes solver status to metadata |
+| `FFT_simulation/fg/constitutive_incompressible/1.py` | batched `umat_field` (Neo-Hookean); `umat` kept as wrapper |
+| `FFT_simulation/fg/constitutive_incompressible/2.py` | batched `umat_field` (Mooney-Rivlin, closed-form tangent); `umat` kept as wrapper |
+| `FFT_simulation/fg/mxfft.py` | vectorized Ghat4/constitutive/averages; scipy.fft backend; residual-based Newton with det-guard + line search; adaptive sub-stepping with rollback; statuses; `solver_stats.json`; incremental saving; memory-aware GMRES restart; new `calculate()` parameters |
+| `FFT_simulation/fg/preconditioning.py` | multithreaded scipy.fft, spatial-axes-only shifts; `reference_average()` for the C6 reference-tangent modes |
+| `FFT_simulation/run_case.py` | passes new solver settings; line-buffered `run.log`; passes solver status to metadata |
 | `run_metadata.py` | writes `Solver status:` line |
 | `simulation_config.py` | exposes `max_newton`, `min_substep_ratio`, `tol_rel`, `gmres_restart`, and the C5/C6 keys `reference`, `forcing`, `inner_rtol`, `eta_max`, `eta_min` in the YAML schema |
 | `plot_p11_vs_phr.py` | skips cases whose `solver_stats.json` status is `failed` |

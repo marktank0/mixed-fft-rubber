@@ -10,7 +10,7 @@ across a filler/matrix contrast ladder:
   field extremes  min/max of local F11. Gibbs ringing from the truncated
                   Fourier basis shows up as over/undershoot at interfaces.
 
-Run from the repository root:
+Runnable from any working directory:
 
     FFT_WORKERS=2 python3 benchmark_discretization.py
 
@@ -24,6 +24,10 @@ import subprocess
 import time
 
 import numpy as np
+
+from project_paths import CHARGES_DIR, ensure_import_paths, results_path, VOXELS_DIR
+
+ensure_import_paths()
 
 import fg.mxfft as mx
 
@@ -90,10 +94,10 @@ def run(tag, structure, charge, N, incre, out_dir, mask_f, **kw):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--N", type=int, default=31)
-    ap.add_argument("--structure", default="3D_samples/voxels/1_voxel.npz")
-    ap.add_argument("--charge-dir", default="3D_samples/Charges")
+    ap.add_argument("--structure", default=os.path.join(VOXELS_DIR, "1_voxel.npz"))
+    ap.add_argument("--charge-dir", default=CHARGES_DIR)
     ap.add_argument("--increments", type=int, default=3)
-    ap.add_argument("--out", default="Results/bench_discretization")
+    ap.add_argument("--out", default=results_path("bench_discretization"))
     args = ap.parse_args()
 
     phase = np.load(args.structure)["phase"]

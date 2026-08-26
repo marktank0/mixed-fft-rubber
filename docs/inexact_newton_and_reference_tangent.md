@@ -1,6 +1,6 @@
 # Inexact Newton Forcing Terms and the Reference Tangent (C5, C6)
 
-This note documents two solver changes to `fg/mxfft.py` — items **C5**
+This note documents two solver changes to `FFT_simulation/fg/mxfft.py` — items **C5**
 (inexact Newton with Eisenstat–Walker forcing terms) and **C6**
 (configurable reference tangent for the Green preconditioner) of
 `docs/high_contrast_convergence_plan.md`. It records the theory, the
@@ -49,7 +49,7 @@ JF^{-T}\!:\!(\cdot) & -\kappa^{-1}
 \mathbb{K} = \frac{\partial P}{\partial F} .
 $$
 
-$A_k$ is applied matrix-free (`KdX` in `fg/mxfft.py`); each application
+$A_k$ is applied matrix-free (`KdX` in `FFT_simulation/fg/mxfft.py`); each application
 costs one $\mathcal{G}$ evaluation, i.e. 9 forward and 9 inverse FFTs on the
 $N^3$ grid, plus the $9\times 9\times N^3$ tangent contraction. The Krylov
 iteration count is therefore an almost exact proxy for cost.
@@ -146,9 +146,9 @@ solve that C5 exists to remove, and the measurements show it is unnecessary.
 
 | item | location |
 |---|---|
-| forcing-term update | `eisenstat_walker_forcing()`, `fg/mxfft.py` |
-| per-solve tolerance plumbed into GMRES/CG | `solve_linear(b, rtol)`, `fg/mxfft.py` |
-| forcing-term state across Newton steps | `newton_increment()`, `fg/mxfft.py` |
+| forcing-term update | `eisenstat_walker_forcing()`, `FFT_simulation/fg/mxfft.py` |
+| per-solve tolerance plumbed into GMRES/CG | `solve_linear(b, rtol)`, `FFT_simulation/fg/mxfft.py` |
+| forcing-term state across Newton steps | `newton_increment()`, `FFT_simulation/fg/mxfft.py` |
 | logged per Newton step | `solver_stats.json` → `increments[].forcing_terms` |
 
 The forcing term is reset to $\eta_{\max}$ at the start of every
@@ -235,7 +235,7 @@ carries over to the Krylov/preconditioner setting.
 
 ### 3.2 Implementation
 
-`reference_average()` in `fg/preconditioning.py` computes the reference from
+`reference_average()` in `FFT_simulation/fg/preconditioning.py` computes the reference from
 a per-voxel field under any of the three modes. Because the spatial grid
 occupies the trailing three axes, the same function serves the rank-7
 tangent $\mathbb{K}$ `(3,3,3,3,N,N,N)`, the rank-5 field $JF^{-T}$
@@ -243,8 +243,8 @@ tangent $\mathbb{K}$ `(3,3,3,3,N,N,N)`, the rank-5 field $JF^{-T}$
 Empty phase masks are skipped, so an unfilled (single-phase) cell falls back
 to the whole-cell average under every mode.
 
-Both solvers consume it: `fg/mxfft.py` (`solve_linear`) for
-$\mathbb{K}_0, H_0, \alpha_0$, and `fg/fft.py` for $\mathbb{K}_0$. The
+Both solvers consume it: `FFT_simulation/fg/mxfft.py` (`solve_linear`) for
+$\mathbb{K}_0, H_0, \alpha_0$, and `FFT_simulation/fg/fft.py` for $\mathbb{K}_0$. The
 default is `"mean"`, i.e. **unchanged** behaviour — see §5 before selecting
 anything else.
 
@@ -306,7 +306,7 @@ residual.
 ## 5. Important finding: the reference preconditioner leaves the compatible subspace
 
 While validating C6 we found a **pre-existing defect in the Green
-preconditioner** (`fg/preconditioning.py`), independent of C5 and C6 but
+preconditioner** (`FFT_simulation/fg/preconditioning.py`), independent of C5 and C6 but
 exposed by them. It should be resolved before `reference` is used as a
 production knob, and it bears on the interpretation of any result produced
 with `preconditioner="reference"`.
@@ -379,7 +379,7 @@ established results history, which is why it remains the default.
 
 ## 6. Configuration
 
-YAML (`Run_configs/*.yaml`), under `defaults.solver` or per case:
+YAML (`FFT_simulation/Run_configs/*.yaml`), under `defaults.solver` or per case:
 
 ```yaml
 solver:
@@ -414,8 +414,8 @@ them directly to `calculate()` if a sensitivity study needs them.
 
 ## 7. Scope
 
-C5 is implemented in the mixed solver (`fg/mxfft.py`) only. The standard
-solver (`fg/fft.py`) still declares convergence on the step norm
+C5 is implemented in the mixed solver (`FFT_simulation/fg/mxfft.py`) only. The standard
+solver (`FFT_simulation/fg/fft.py`) still declares convergence on the step norm
 $\lVert\Delta F\rVert/\lVert F\rVert$ rather than on the true residual
 (diagnosis D4), so it has no residual sequence from which to form a forcing
 term; adding one there requires C2 to be ported first. C6 is implemented in

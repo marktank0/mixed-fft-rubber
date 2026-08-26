@@ -1,6 +1,6 @@
 # Benchmarking the Solver Improvements
 
-`benchmark_suite.py` measures every change made during the high-contrast work
+`FFT_simulation/benchmark_suite.py` measures every change made during the high-contrast work
 against the pre-change solver, across a filler/matrix contrast ladder, and
 produces one table you can read end to end.
 
@@ -16,10 +16,10 @@ produces one table you can read end to end.
 | **Willot** | rotated finite-difference discretization (`discretization`) |
 
 The pre-change solver is not reimplemented — it is materialised straight out of
-git (rev `3672bcd`, the last commit before this work) into `fg/_baseline/`, so
+git (rev `3672bcd`, the last commit before this work) into `FFT_simulation/fg/_baseline/`, so
 "baseline" really is the code that produced the existing results.
 
-**Both `fg/mxfft.py` and `fg/preconditioning.py` are pinned**, and the pinned
+**Both `FFT_simulation/fg/mxfft.py` and `FFT_simulation/fg/preconditioning.py` are pinned**, and the pinned
 solver's imports are rewritten to point at the pinned copies. This matters:
 the preconditioner fix lives in `preconditioning.py`, so a pinned solver
 importing the *live* module would silently run with the corrected
@@ -67,19 +67,19 @@ Two built-in self-checks are worth knowing about:
 
 ```bash
 # full sweep - defaults to every usable core
-python3 benchmark_suite.py
+python3 FFT_simulation/benchmark_suite.py
 
 # continue after an interruption (nothing is recomputed)
-python3 benchmark_suite.py --resume
+python3 FFT_simulation/benchmark_suite.py --resume
 
 # smoke test first - a few minutes
-python3 benchmark_suite.py --quick --out Results/bench_smoke
+python3 FFT_simulation/benchmark_suite.py --quick --out Results/bench_smoke
 
 # see the plan without running anything
-python3 benchmark_suite.py --dry-run
+python3 FFT_simulation/benchmark_suite.py --dry-run
 
 # rebuild the tables from results already on disk
-python3 benchmark_suite.py --summary-only
+python3 FFT_simulation/benchmark_suite.py --summary-only
 ```
 
 `--workers` defaults to `len(os.sched_getaffinity(0))`, which respects
@@ -213,6 +213,6 @@ cleanly for the first time: +1.6 % at contrast 10, +2.3 % at contrast 100.
   refinement, which needs a resolution study (`--N 31` vs `--N 63` on the same
   structure) rather than a single-N comparison.
 - The contrast ladder generates its own charge files
-  (`3D_samples/Charges/bench_c<contrast>.txt`) with the matrix fixed at
+  (`FFT_simulation/Run_configs/Charges/bench_c<contrast>.txt`) with the matrix fixed at
   E = 10 and Poisson ratios 0.48 / 0.30. Change `E_MATRIX` / `CHARGE_TEMPLATE`
   in the script if a different material pairing is wanted.

@@ -5,6 +5,8 @@ import os
 
 import numpy as np
 
+from project_paths import SAMPLES_DIR
+
 
 def default_voxel_output_path(spheres_path, N):
     folder = os.path.dirname(spheres_path)
@@ -89,5 +91,5 @@ def voxelize_and_save(spheres_path, N, output_path=None, matrix_phase=0, filler_
 
 
 if __name__ == "__main__":
-    path = voxelize_and_save("3D_samples/spheres/1_spheres.npz", N=31)
+    path = voxelize_and_save(os.path.join(SAMPLES_DIR, "spheres", "1_spheres.npz"), N=31)
     print(path)
