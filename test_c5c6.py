@@ -9,7 +9,7 @@ Two levels:
             must reproduce the pre-change solver BITWISE, and every C5/C6
             variant must agree with it on P11 to the solver tolerance.
 
-Run from the repository root:
+Runnable from any working directory:
 
     FFT_WORKERS=2 python3 test_c5c6.py [--quick]
 
@@ -24,6 +24,10 @@ import subprocess
 import time
 
 import numpy as np
+
+from project_paths import charge_path, ensure_import_paths, results_path, VOXELS_DIR
+
+ensure_import_paths()
 
 from fg.mxfft import eisenstat_walker_forcing
 from fg.preconditioning import REFERENCE_MODES, reference_average
@@ -169,10 +173,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="unit tests only")
     ap.add_argument("--N", type=int, default=31)
-    ap.add_argument("--structure", default="3D_samples/voxels/1_voxel.npz")
-    ap.add_argument("--charge", default="3D_samples/Charges/Neo_1.0_E10-1000.txt")
+    ap.add_argument("--structure", default=os.path.join(VOXELS_DIR, "1_voxel.npz"))
+    ap.add_argument("--charge", default=charge_path("Neo_1.0_E10-1000.txt"))
     ap.add_argument("--increments", type=int, default=3)
-    ap.add_argument("--out", default="Results/test_c5c6")
+    ap.add_argument("--out", default=results_path("test_c5c6"))
     args = ap.parse_args()
 
     test_reference_average()

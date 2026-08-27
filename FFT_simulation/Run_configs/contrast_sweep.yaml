@@ -1,0 +1,104 @@
+version: 1
+
+# Contrast sweep: every structure below is run at every filler modulus below.
+#
+#   python FFT_simulation/contrast_sweep.py FFT_simulation/Run_configs/contrast_sweep.yaml
+#   python FFT_simulation/contrast_sweep.py <this file> --dry-run        # plan only
+#   python FFT_simulation/contrast_sweep.py <this file> --filler-e 100 250   # subset
+#
+# Output layout is one directory per contrast, one run folder per structure:
+#   Results/contrast_sweep/E10-250/phr_20.49_id20_voxel_output/
+# so a single contrast plots in one call:
+#   python plot_p11_vs_phr.py Results/contrast_sweep/E10-250
+
+# Relative paths below are resolved against the repository root (the parent of
+# FFT_simulation/), not the working directory, so this config runs the same from
+# anywhere. Set an absolute path here to point the whole run somewhere else.
+base_path: . #/home/jovyan/mixed-fft-rubber/
+
+experiment:
+  name: contrast_sweep
+  output_root: Results/contrast_sweep
+
+execution:
+  # 10 structures x 7 contrasts = 70 runs, so anything above 70 workers is
+  # spare capacity. Memory per worker at the N=31 below: ~0.55 GB, of which the
+  # 200-vector Krylov basis is 0.48 GB -> ~39 GB for 70 concurrent runs. At
+  # N=63 the same settings cost ~5 GB per worker (~350 GB); drop gmres_restart
+  # before dropping workers if that is tight.
+  max_workers: 100
+  log_to_file: true
+  on_existing: overwrite # skip | overwrite | error
+  save_resolved_config: true
+  thread_env:
+    OMP_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    MKL_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1
+    FFT_WORKERS: 1
+
+sweep:
+  # The contrast ladder. The matrix is fixed and the filler modulus varies, so
+  # contrast = filler_e / matrix_e = 10, 25, 50, 100, 250, 500, 750.
+  # One charge file per entry is generated in Run_configs/Charges/ as
+  # Neo_1.0_E10-<filler>.txt if it is not there already; an existing file of that
+  # name is reused only when its materials match.
+  model: 1.0        # 1.0 = Neo-Hookean (fg/constitutive_incompressible/1.py)
+  matrix_e: 10
+  matrix_nu: 0.48
+  filler_nu: 0.30
+  strain: 1.0       # macroscopic F11 charge; solver.increments splits it up
+  filler_e: [100, 250, 500, 1000, 2500, 5000, 7500]
+
+  structures:
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_15.65_id6_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_20.49_id20_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_25.29_id22_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_30.40_id23_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_35.56_id59_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_40.46_id46_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_45.82_id52_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_50.36_id100_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_55.26_id91_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_60.76_id90_voxel.npz
+
+defaults:
+  solver:
+    type: mixed
+    N: 31
+    increments:
+      repeat: 10
+      value: 0.10
+    preconditioner: reference
+    diagnostics: false
+    savemodel: normal
+    # scipy counts restart cycles, not iterations: the effective cap is
+    # ceil(max_gmres_iter/gmres_restart)*gmres_restart. 2000/200 = 10 full cycles.
+    max_gmres_iter: 2000
+    min_substep_ratio: 0.25
+    #tol_rel:
+    gmres_restart: 200 #num of vectors
+
+    # FIX - Green preconditioner restricted to the compatible subspace.
+    precond_restrict: true
+
+    # C5 - inexact Newton.
+    forcing: eisenstat_walker   # eisenstat_walker | fixed
+    eta_max: 1.0e-2             # loosest inner tolerance
+    eta_min: 1.0e-3             # tightest inner tolerance
+
+    # C6 - reference tangent for the Green preconditioner: mean | matrix | mid
+    reference: matrix
+
+    discretization: fourier     # fourier | willot
+
+  phases:
+    matrix_phase: 0
+    filler_phase: 1
+    phase_key: phase
+
+  outputs:
+    save_plots: true
+    plot_dpi: 200
+    save_fields: false
+    field_filename: fields.vti

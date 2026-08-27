@@ -1,21 +1,18 @@
 {
- "git_revision": "005d93420f5d5a603c9be4c77a6ecd38f53b3721-dirty",
+ "git_revision": "8401730291e299f3986808ff71ffb1fd1087bdf2-dirty",
  "baseline_revision": "3672bcdc5a654cb4911f3697641e0b600bba2cb7",
- "created": "2026-08-08 10:59:12",
+ "created": "2026-08-26 12:41:46",
  "N": 31,
- "increments": 3,
+ "increments": 1,
  "contrasts": [
   10,
-  100,
-  500,
-  1000,
-  2500
+  100
  ],
  "structures": [
-  "3D_samples/voxels/1_voxel.npz"
+  "C:\\Coding\\mixed-fft-master\\3D_samples\\voxels\\1_voxel.npz"
  ],
- "workers": 4,
- "runs_planned": 65,
+ "workers": 10,
+ "runs_planned": 12,
  "configs": [
   {
    "name": "baseline",

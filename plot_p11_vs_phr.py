@@ -71,7 +71,7 @@ def p11_at_strain(f11, p11, strain, tol=0.05):
     return float(p11[i])
 
 
-def collect(results_dir, strains):
+def collect(results_dir, strains, ignore_failed):
     """Gather {strain: [(phr, P11), ...]} across all result folders."""
     data = {strain: [] for strain in strains}
     folders = sorted(
@@ -83,9 +83,10 @@ def collect(results_dir, strains):
         csv_path = os.path.join(results_dir, name, "output.csv")
         if not os.path.isfile(csv_path):
             continue
-        if solver_failed(os.path.join(results_dir, name)):
-            print("skip (solver failed): {}".format(name))
-            continue
+        if ignore_failed:
+            if solver_failed(os.path.join(results_dir, name)):
+                print("skip (solver failed): {}".format(name))
+                continue
         phr = parse_phr(name)
         if phr is None:
             print("skip (no phr in name): {}".format(name))
@@ -136,10 +137,14 @@ def main():
     parser.add_argument("--strains", nargs="+", type=float, default=DEFAULT_STRAINS,
                         help="F11 strain levels (deformation gradient = 1 + strain).")
     parser.add_argument("--out", default=None, help="Output image path (PNG).")
+    parser.add_argument("--ignore-failed", dest="ignore_failed", action="store_true",
+                        default=True, help="Skip runs whose solver_stats.json says failed (default).")
+    parser.add_argument("--include-failed", dest="ignore_failed", action="store_false",
+                        help="Also plot runs whose solver_stats.json says failed.")
     args = parser.parse_args()
 
     out_path = args.out or os.path.join(args.results_dir, "P11_vs_phr.png")
-    data = collect(args.results_dir, args.strains)
+    data = collect(args.results_dir, args.strains, args.ignore_failed)
     make_plot(data, args.strains, out_path)
 
 

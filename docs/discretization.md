@@ -79,7 +79,7 @@ interfaces without ringing.
 ## 3. Implementation
 
 `build_Ghat4(N, stress_control, ndim, discretization)` now lives in
-`fg/preconditioning.py` and is shared by both solvers; `_wave_vectors()`
+`FFT_simulation/fg/preconditioning.py` and is shared by both solvers; `_wave_vectors()`
 returns the derivative symbol for the selected scheme (a **real** array for
 `"fourier"`, so the default path is arithmetically untouched, and a complex
 array for `"willot"`).
@@ -97,7 +97,7 @@ Consequences handled:
   and `pinv` commutes with conjugation, so the symbol is conjugate-symmetric
   and the inverse transform is real. The `.real` in
   `apply_*_preconditioner` is exact, not a truncation.
-- `fg/fft.py`'s duplicated inline $O(81 N^3)$ Python loop for `Ghat4` was
+- `FFT_simulation/fg/fft.py`'s duplicated inline $O(81 N^3)$ Python loop for `Ghat4` was
   replaced by the shared builder (verified bitwise identical).
 
 Select with `discretization: fourier | willot` in the YAML `solver:` block, or
@@ -114,7 +114,7 @@ trusting the formula:
 | check | result |
 |---|---|
 | `"fourier"` reproduces the previous `build_Ghat4` | **bitwise identical** |
-| `"fourier"` reproduces the old `fg/fft.py` inline loop | **bitwise identical** |
+| `"fourier"` reproduces the old `FFT_simulation/fg/fft.py` inline loop | **bitwise identical** |
 | real-space stencil of $\tilde{\xi}_1$ | 8 non-zero voxels on a $2\times2\times2$ cube, values $\pm1$, sign splitting along axis 0 only — i.e. a forward difference averaged over the 4 transverse corners |
 | $\widehat{\mathcal{G}}$ Hermitian | error 0.0 |
 | $\widehat{\mathcal{G}}$ idempotent | error 3.3e-16 |

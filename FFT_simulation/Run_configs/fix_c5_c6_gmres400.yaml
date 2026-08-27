@@ -1,0 +1,102 @@
+version: 1
+# Relative paths below are resolved against the repository root (the parent of
+# FFT_simulation/), not the working directory, so this config runs the same from
+# anywhere. Set an absolute path here to point the whole run somewhere else.
+base_path: . #/home/jovyan/mixed-fft-rubber/
+
+# Corrected solver: preconditioner FIX + C5 (inexact Newton) + C6 (matrix
+# reference tangent), with a 400-vector GMRES basis.
+# This is the "FIX+C5+C6-matrix" configuration of benchmark_suite.py, which is
+# the fastest corrected-family variant in Results/benchmark_suite/summary.md
+# (18.8x over FIX alone at contrast 100, 3.1x at contrast 500).
+
+experiment:
+  name: fix_c5_c6_gmres400
+  output_root: Results/fix_c5_c6_smaller_structures_v2
+
+run:
+  mode: batch # cases | batch
+
+execution:
+  # NOTE: gmres_restart 400 makes the Krylov basis the dominant allocation:
+  # 400 * 10 * N^3 * 8 B = ~8.0 GB per worker at N=63 (~0.95 GB at N=31),
+  # on top of ~1.0 GB at N=63 for Ghat4 / K4 / preconditioner symbol.
+  # Keep max_workers * ~9 GB below available RAM at N=63.
+  max_workers: 100
+  log_to_file: true
+  on_existing: overwrite # skip | overwrite | error
+  save_resolved_config: true
+  thread_env:
+    OMP_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    MKL_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1
+    FFT_WORKERS: 1
+
+defaults:
+  solver:
+    type: mixed
+    N: 31
+    increments:
+      repeat: 10
+      value: 0.10
+    preconditioner: reference
+    diagnostics: false
+    savemodel: normal
+    # scipy counts restart cycles, not iterations: the effective iteration cap
+    # is ceil(max_gmres_iter/gmres_restart) * gmres_restart. 2000/400 = 5 full
+    # cycles, so the cap is exactly 2000.
+    max_gmres_iter: 2000
+    min_substep_ratio: 0.25
+    #tol_rel:
+    gmres_restart: 200 #num of vectors
+    # FIX - Green preconditioner restricted to the compatible subspace.
+    # Without it the solver converges to a null-space-polluted field
+    # (incompat ~6e-1 instead of ~1e-13); see
+    # docs/green_reference_preconditioning.md. Set false only to reproduce
+    # pre-fix (legacy) numbers.
+    precond_restrict: true
+    # C5 - inexact Newton. Forcing terms adapt the inner GMRES tolerance to the
+    # outer Newton residual instead of always solving to 1e-6. After the FIX
+    # this is what makes the corrected solver affordable at all (22x at
+    # contrast 100 in the smoke sweep).
+    # Use forcing: fixed + inner_rtol: 1.0e-6 to reproduce pre-C5 runs exactly.
+    forcing: eisenstat_walker   # eisenstat_walker | fixed
+    eta_max: 1.0e-2             # loosest inner tolerance
+    eta_min: 1.0e-3             # tightest inner tolerance
+    # C6 - reference tangent for the Green preconditioner: mean | matrix | mid.
+    # "matrix" is the C6 optimum in the corrected family and, with
+    # precond_restrict: true, it does not move the converged answer
+    # (P11 agrees with reference: mean to ~1e-9); it is purely a
+    # preconditioner choice. See docs/inexact_newton_and_reference_tangent.md.
+    reference: matrix
+    # spectral scheme; Willot was iteration-neutral in the benchmark
+    discretization: fourier     # fourier | willot
+
+  phases:
+    matrix_phase: 0
+    filler_phase: 1
+    phase_key: phase
+
+  outputs:
+    save_plots: true
+    plot_dpi: 200
+    save_fields: false
+    field_filename: fields.vti
+
+  charge:
+    path: FFT_simulation/Run_configs/Charges/Neo_1.0_E10-500.txt
+
+batch:
+  structures:
+    glob: microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/*.npz
+    sort: name
+    include: ["*_voxel.npz"]
+    exclude: ["test_*"]
+
+cases:
+  - name: one_voxel
+    structure_path: 3D_samples/voxels/1_voxel.npz
+
+  - name: two_voxel
+    structure_path: 3D_samples/voxels/2_voxel.npz

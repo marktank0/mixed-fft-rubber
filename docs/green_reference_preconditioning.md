@@ -167,7 +167,7 @@ every run made with `preconditioner="reference"`.
 ### The proof
 
 The mixed Newton operator \(A\) was formed densely at \(N=7\) (contrast 100,
-\(\phi = 7.9\,\%\)) directly from `fg/mxfft.py`, and its singular values
+\(\phi = 7.9\,\%\)) directly from `FFT_simulation/fg/mxfft.py`, and its singular values
 computed exactly:
 
 | quantity | value |

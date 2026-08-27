@@ -3,6 +3,10 @@ import itertools
 import numpy as np
 import scipy.fft
 
+from project_paths import ensure_import_paths
+
+ensure_import_paths()
+
 from fg.preconditioning import build_Ghat4, _wave_vectors
 
 N = 9

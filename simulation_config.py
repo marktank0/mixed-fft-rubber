@@ -7,6 +7,8 @@ import glob
 import json
 import os
 
+from project_paths import PROJECT_ROOT
+
 try:
     import yaml
 except ModuleNotFoundError:
@@ -66,12 +68,26 @@ def apply_thread_env(config):
 
 
 def resolve_base_path(config, base_path_override=None):
-    """Resolve the run base path from CLI override or YAML."""
-    raw_base_path = base_path_override
-    if raw_base_path is None:
-        raw_base_path = config.get("base_path", ".")
-    raw_base_path = os.path.expanduser(os.path.expandvars(str(raw_base_path)))
-    return os.path.abspath(raw_base_path)
+    """Resolve the run base path from CLI override or YAML.
+
+    A relative ``base_path`` in the YAML is resolved against the repository
+    root, not the working directory: the configs live in
+    FFT_simulation/Run_configs/ but their structure, charge and output paths
+    are written relative to the repository root, and a run must resolve to the
+    same files whether it was started from the root, from FFT_simulation/ or
+    from a server job directory.
+
+    A ``--base-path`` given on the command line is resolved against the working
+    directory instead, which is what a human typing a path expects.
+    """
+    if base_path_override is not None:
+        raw_base_path = os.path.expanduser(os.path.expandvars(str(base_path_override)))
+        return os.path.abspath(raw_base_path)
+
+    raw_base_path = os.path.expanduser(os.path.expandvars(str(config.get("base_path", "."))))
+    if os.path.isabs(raw_base_path):
+        return os.path.normpath(raw_base_path)
+    return os.path.normpath(os.path.join(PROJECT_ROOT, raw_base_path))
 
 
 def resolve_path(path, base_path):

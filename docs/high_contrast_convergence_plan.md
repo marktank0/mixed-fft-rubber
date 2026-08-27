@@ -38,9 +38,9 @@ pre-change solver to 1e-14. Contrast 500 (E 10 vs 5000), 3 increments:
 full 10-increment case). The high Krylov counts confirm D5/D7: C5 and C6
 are the next levers to bring 500x down to minutes per case.
 
-Target: the mixed FFT solver in `fg/mxfft.py` (and, where changes are shared,
-`fg/fft.py`), the constitutive files in `fg/constitutive_incompressible/`, and
-the batch layer (`run_case.py`, `simulation_config.py`, `run_metadata.py`).
+Target: the mixed FFT solver in `FFT_simulation/fg/mxfft.py` (and, where changes are shared,
+`FFT_simulation/fg/fft.py`), the constitutive files in `FFT_simulation/fg/constitutive_incompressible/`, and
+the batch layer (`FFT_simulation/run_case.py`, `simulation_config.py`, `run_metadata.py`).
 
 ## 1. Goal
 
@@ -66,7 +66,7 @@ These are the concrete failure modes, in decreasing order of severity.
 
 ### D1. Silent acceptance of failed solves
 
-`fg/mxfft.py` (Newton loop): if the Krylov solver returns `flag > 0`
+`FFT_simulation/fg/mxfft.py` (Newton loop): if the Krylov solver returns `flag > 0`
 (not converged), the code does `break` and falls through to saving the
 average stress **of a non-equilibrated field**. The increment loop then
 continues from that state. Consequences:
@@ -238,7 +238,7 @@ cuts and status; solver status line in `run_metadata.txt`.*
 
 **What.**
 
-1. Rewrite `fg/constitutive_incompressible/1.py` and `2.py` to accept the
+1. Rewrite `FFT_simulation/fg/constitutive_incompressible/1.py` and `2.py` to accept the
    full field `F (3,3,N,N,N)`, `p (N,N,N)` and return full-field `P`, `K4`,
    `JFmT`, `kappa_inv`. NumPy's `det`/`inv` are batched (operate on
    stacks `(...,3,3)`); every per-voxel einsum becomes one batched einsum
@@ -527,7 +527,7 @@ structure; identical converged outputs across references (within linear
 tolerance) as a preconditioner-correctness check.
 
 *Implemented as `reference` = `"mean"` | `"matrix"` | `"mid"`
-(`reference_average()` in `fg/preconditioning.py`), applied to K_0, H_0 and
+(`reference_average()` in `FFT_simulation/fg/preconditioning.py`), applied to K_0, H_0 and
 alpha_0 in the mixed solver and to K_0 in the standard solver. Default stays
 `"mean"`.*
 
