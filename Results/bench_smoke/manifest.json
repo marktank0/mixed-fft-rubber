@@ -1,0 +1,138 @@
+{
+ "git_revision": "6d246b3e20c9b210ec4083fb1161d4213f865bac-dirty",
+ "baseline_revision": "3672bcdc5a654cb4911f3697641e0b600bba2cb7",
+ "created": "2026-08-07 18:02:34",
+ "N": 31,
+ "increments": 1,
+ "contrasts": [
+  10,
+  100
+ ],
+ "structures": [
+  "3D_samples/voxels/1_voxel.npz"
+ ],
+ "workers": 4,
+ "runs_planned": 12,
+ "configs": [
+  {
+   "name": "baseline",
+   "solver": "base",
+   "kwargs": {},
+   "family": "legacy"
+  },
+  {
+   "name": "baseline-new",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "fixed"
+   },
+   "family": "legacy"
+  },
+  {
+   "name": "C5",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker"
+   },
+   "family": "legacy"
+  },
+  {
+   "name": "C6-matrix",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "fixed",
+    "reference": "matrix"
+   },
+   "family": "legacy"
+  },
+  {
+   "name": "C6-mid",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "fixed",
+    "reference": "mid"
+   },
+   "family": "legacy"
+  },
+  {
+   "name": "C5+C6-matrix",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker",
+    "reference": "matrix"
+   },
+   "family": "legacy"
+  },
+  {
+   "name": "C5+C6-mid",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker",
+    "reference": "mid"
+   },
+   "family": "legacy"
+  },
+  {
+   "name": "FIX",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "fixed"
+   },
+   "family": "corrected"
+  },
+  {
+   "name": "FIX+C5",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker"
+   },
+   "family": "corrected"
+  },
+  {
+   "name": "FIX+C5+C6-matrix",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker",
+    "reference": "matrix"
+   },
+   "family": "corrected"
+  },
+  {
+   "name": "FIX+C5+C6-mid",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker",
+    "reference": "mid"
+   },
+   "family": "corrected"
+  },
+  {
+   "name": "FIX+C5+Willot",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker",
+    "discretization": "willot"
+   },
+   "family": "corrected"
+  },
+  {
+   "name": "FIX+C5+Willot+C6m",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker",
+    "discretization": "willot",
+    "reference": "matrix"
+   },
+   "family": "corrected"
+  },
+  {
+   "name": "control-unprecond",
+   "solver": "new",
+   "kwargs": {
+    "forcing": "eisenstat_walker",
+    "preconditioner": "gmres"
+   },
+   "family": "control"
+  }
+ ]
+}

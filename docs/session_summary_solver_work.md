@@ -6,9 +6,12 @@ A single record of the solver investigation on branches
 a measurement later turned out to be unreliable, that is stated rather than
 quietly dropped (Section 10).
 
-Detail lives in the topic documents: `green_reference_preconditioning.md`,
-`discretization.md`, `benchmarking.md`, `dbfft_rework.md`,
-`high_contrast_convergence_plan.md`, `solver_improvements.md`.
+Detail lives in the topic documents: `green_reference_preconditioning.md`, `discretization.md`, `benchmarking.md`,
+`inexact_newton_and_reference_tangent.md`, `high_contrast_convergence_plan.md`,
+`solver_improvements.md`, and — on the DBFFT branch — `dbfft_rework.md`.
+
+Layout note: the solver lives under `FFT_simulation/fg/`; the test scripts sit
+at the repository root.
 
 ---
 
@@ -246,7 +249,7 @@ rather than trusting the formula:
 | check | result |
 |---|---|
 | `fourier` reproduces the previous `build_Ghat4` | **bitwise** |
-| `fourier` reproduces the old `fg/fft.py` inline loop | **bitwise** |
+| `fourier` reproduces the old `FFT_simulation/fg/fft.py` inline loop | **bitwise** |
 | real-space stencil of ξ̃₁ | **8 voxels on a 2×2×2 cube, values ±1, sign splitting along one axis** |
 | Ĝ Hermitian / idempotent | 0.0 / 3.3e-16 |
 | Ĝ fixes Willot-gradient fields | 4.8e-16 |
@@ -386,15 +389,15 @@ That is what motivated Section 9.
 
 ## 8. Benchmark infrastructure
 
-`benchmark_suite.py` measures every change against the pre-change solver across
+`FFT_simulation/benchmark_suite.py` measures every change against the pre-change solver across
 a contrast ladder, on a many-core machine: one single-threaded process per
 (structure, contrast, config), results streamed to `results.jsonl` for crash-safe
 resume, per-run logs so 100 parallel runs do not interleave.
 
 Two bugs were found **in the benchmark itself**, both instructive:
 
-**(a) The baseline was not a baseline.** The pinned pre-change `fg/mxfft.py`
-imports its symbol builder from the *live* `fg/preconditioning.py` — so after
+**(a) The baseline was not a baseline.** The pinned pre-change `FFT_simulation/fg/mxfft.py`
+imports its symbol builder from the *live* `FFT_simulation/fg/preconditioning.py` — so after
 the preconditioner fix, "baseline" was silently running the **corrected**
 preconditioner. Fixed by pinning `preconditioning.py` too and rewriting the
 pinned solver's imports. Verified: the pinned baseline now reproduces the
@@ -507,7 +510,7 @@ Recorded so they are not cited later:
 | `test_discretization.py` | bitwise reproduction of both previous `Ghat4` implementations; the real-space stencil; Hermitian/idempotent/reality/projection properties |
 | `test_green_jacobi.py` | collapse onto Green on a homogeneous body; compatibility of the output; head-to-head iteration counts |
 | `test_dbfft.py` | grad/div adjointness; operator rank; acoustic-tensor conditioning; agreement with the corrected F-based solver |
-| `benchmark_suite.py` | the full contrast ladder across all configurations, with truncation flagging |
+| `FFT_simulation/benchmark_suite.py` | the full contrast ladder across all configurations, with truncation flagging |
 
 ---
 

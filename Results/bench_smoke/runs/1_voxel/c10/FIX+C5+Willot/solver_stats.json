@@ -1,0 +1,52 @@
+{
+ "status": "converged",
+ "tol_rel": 1e-05,
+ "tol_abs": 1e-10,
+ "max_gmres_iter": 1000,
+ "preconditioner": "reference",
+ "discretization": "willot",
+ "precond_restrict": true,
+ "reference": "mean",
+ "forcing": "eisenstat_walker",
+ "inner_rtol": null,
+ "eta_min": 0.001,
+ "eta_max": 0.01,
+ "step_cuts": 0,
+ "increments": [
+  {
+   "newton_iterations": 3,
+   "krylov_iterations": [
+    11,
+    15,
+    16
+   ],
+   "forcing_terms": [
+    0.01,
+    0.0021040994481571927,
+    0.001
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    186.01888241504153,
+    11.520034152988305,
+    0.04284256983832908,
+    1.4742952105111322e-05
+   ],
+   "residual_p": [
+    17.260069524773005,
+    0.5004016483251268,
+    0.002221760131419751,
+    2.1608221268905722e-07
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.0,
+   "converged": true,
+   "time_seconds": 8.801966190338135
+  }
+ ]
+}
