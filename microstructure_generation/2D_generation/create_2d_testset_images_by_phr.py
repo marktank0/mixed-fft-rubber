@@ -7,24 +7,27 @@ its own 2D PHR.
 import argparse
 import csv
 import os
+import sys
 
 import numpy as np
 
+# This script lives in microstructure_generation/2D_generation/, so the
+# repository root is two levels up (the generation package is one).
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+GENERATION_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+REPO_ROOT = os.path.abspath(os.path.join(GENERATION_DIR, os.pardir))
+# Put both on sys.path so the sibling-module imports below resolve whether
+# this file is run as a script or imported.
+for _path in (SCRIPT_DIR, GENERATION_DIR, REPO_ROOT):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
+
+# calculate_phr lives one level up, in microstructure_generation/.
 try:
     from microstructure_generation.calculate_phr import (
         DEFAULT_FILLER_DENSITY,
         DEFAULT_RUBBER_DENSITY,
         calculate_phr,
-    )
-    from microstructure_generation.cross_section_generator import (
-        DEFAULT_AXIS,
-        DEFAULT_NUM_SECTIONS,
-        DEFAULT_RESOLUTION,
-        DEFAULT_SPHERE_NPZ_GRID,
-        generate_cross_sections,
-        generate_cross_sections_from_phase,
-        load_structure_for_cross_sections,
-        resize_sections,
     )
 except ImportError:
     from calculate_phr import (
@@ -32,20 +35,21 @@ except ImportError:
         DEFAULT_RUBBER_DENSITY,
         calculate_phr,
     )
-    from cross_section_generator import (
-        DEFAULT_AXIS,
-        DEFAULT_NUM_SECTIONS,
-        DEFAULT_RESOLUTION,
-        DEFAULT_SPHERE_NPZ_GRID,
-        generate_cross_sections,
-        generate_cross_sections_from_phase,
-        load_structure_for_cross_sections,
-        resize_sections,
-    )
 
+# cross_section_generator sits next to this file in 2D_generation/, which
+# can never be a package name (it starts with a digit), so there is no
+# package-qualified form for it - it is always imported from SCRIPT_DIR.
+from cross_section_generator import (
+    DEFAULT_AXIS,
+    DEFAULT_NUM_SECTIONS,
+    DEFAULT_RESOLUTION,
+    DEFAULT_SPHERE_NPZ_GRID,
+    generate_cross_sections,
+    generate_cross_sections_from_phase,
+    load_structure_for_cross_sections,
+    resize_sections,
+)
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
 
 DEFAULT_INPUT_DIR = os.path.join(REPO_ROOT, "Structures", "3D_structures", "Spheres")
 DEFAULT_OUTPUT_DIR = os.path.join(REPO_ROOT, "Structures", "2D_images")

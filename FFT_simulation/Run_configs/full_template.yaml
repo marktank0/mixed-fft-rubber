@@ -1,0 +1,347 @@
+# =============================================================================
+# full_template.yaml - every setting the FFT run configs understand.
+#
+# This file is documentation, not a runnable job: it shows all three run styles
+# (cases / batch / sweep) at once, and a real config only ever uses one of them.
+# Copy it, delete the sections you do not need, and edit the rest.
+#
+# Who reads this file:
+#   python FFT_simulation/batch_run.py      <config>   # run.mode: cases | batch
+#   python FFT_simulation/contrast_sweep.py <config>   # needs the sweep: section
+#
+# Useful flags (both runners): --dry-run, --base-path, --max-workers,
+#   --on-existing {skip,overwrite,error}, --terminal-output
+#   contrast_sweep.py also takes --filler-e <values> to run part of the ladder.
+#
+# Parsing rules worth knowing:
+#   * Unknown keys are silently ignored - a typo does not raise, it just does
+#     nothing (e.g. solver.max_newton in 1_test_run.yaml is read by nothing).
+#   * `defaults:` is deep-merged into every case; a case wins over defaults.
+# =============================================================================
+
+version: 1
+
+# Root that every relative path below is resolved against. A relative value here
+# is itself taken relative to the repository root (NOT the working directory)
+base_path: .
+
+
+# --- experiment ---------------------------------------------------------------
+experiment:
+  # Free-text label for the experiment.
+  name: my_experiment
+
+  # Default output directory for every case
+  output_root: Results/my_experiment
+
+
+# --- run ----------------------------------------------------------------------
+run:
+  # How the case list is built: "cases" reads the explicit `cases:` list below,
+  # "batch" takes all structures in directory
+  mode: cases                     #Options: cases | batch
+
+
+# --- execution ----------------------------------------------------------------
+execution:
+  # Number of cores allocated for task; every core can run 1 simulation in parralel so this is how many run in parralel
+  max_workers: 4
+
+  # true = each case's solver output is redirected to <output>/run.log;
+  # false = everything is printed to this terminal, interleaved between workers.
+  log_to_file: true             #Options: true | false
+
+
+  # What to do when a case's output directory already exists.
+  on_existing: overwrite          # Options: skip (leave it, do not rerun) | overwrite (run into it anyway) | error (abort the whole batch)
+
+
+  # record of what actually ran. Options: true | false
+  save_resolved_config: true
+
+  # Environment variables set before numpy/scipy are imported. Keep these at 1:
+  # parallelism comes from max_workers, and letting each worker also thread
+  # oversubscribes the machine badly. Set to null to leave the environment alone.
+  # Options: any mapping of env var -> value, or null
+  thread_env:
+    OMP_NUM_THREADS: 1       # OpenMP threads (numpy/scipy kernels)
+    OPENBLAS_NUM_THREADS: 1  # OpenBLAS threads
+    MKL_NUM_THREADS: 1       # Intel MKL threads
+    NUMEXPR_NUM_THREADS: 1   # numexpr threads
+    FFT_WORKERS: 1           # threads scipy.fft uses inside one solver process
+
+
+# --- naming -------------------------------------------------------------------
+naming:
+  # Template for the output folder name of cases that do not set `output_name`.
+  # Leave this section out and the folder is "<structure stem>_output".
+  # Placeholders: {case_name} {structure_stem} {charge_stem} {N} {preconditioner}
+  # Options: any Python format string using those placeholders
+  case_template: "{structure_stem}_N{N}_{preconditioner}"
+
+
+# --- defaults -----------------------------------------------------------------
+# Deep-merged into every case. Anything a case sets itself wins. Every key here
+# is also valid directly inside a single `cases:` entry.
+defaults:
+
+  solver:
+    # Solver family.
+    type: mixed           # Options: mixed
+
+    # Grid size: the cell is N x N x N voxels and the structure's phase array must match.
+    N: 31                 # Options: any odd integer, has to be the same as the structure
+
+    # Macroscopic load path, as a list of increments of the charge file's dF.
+    # Two spellings: an explicit list, or {repeat, value} for a uniform ladder.
+    # The listed values are the *original* increment boundaries where results are
+    # written to output.csv; the solver may still cut sub-steps inside one.
+    # Options: {repeat: <int>, value: <float>} | [0.05, 0.1, 0.1, ...]
+    increments:
+      repeat: 10
+      value: 0.1
+    # increments: [0.05, 0.05, 0.1, 0.1, 0.2]   # equivalent alternative form
+
+    # Preconditioner for the linear (Krylov) solve inside each Newton step.
+    # "reference" and "green_jacobi" use GMRES with a Green-operator symbol built
+    # from a homogeneous reference tangent; "gmres" is unpreconditioned GMRES;
+    # "none"/null falls back to CG, which is only sane at very low contrast.
+    # Options: green | green_jacobi | gmres | none | null
+    preconditioner: green
+
+    # true = print extra per-solve diagnostics (preconditioned vs. raw residual,
+    # split into the F and pressure blocks). Verbose; for debugging convergence.
+    # Options: true | false
+    diagnostics: false
+
+    # Cap on total Krylov iterations per linear solve. scipy counts restart
+    # cycles, so the effective cap is ceil(max_gmres_iter/gmres_restart) *
+    # gmres_restart. Hitting it fails the increment and triggers a step cut.
+    # Options: any integer >= 1
+    max_gmres_iter: 2000
+
+    # GMRES restart length = number of Krylov basis vectors kept. This is the
+    # dominant memory cost: 200 vectors ~ 0.48 GB at N=31, ~4 GB at N=63. Longer
+    # converges in fewer cycles but costs linearly more memory.
+    # Options: any integer >= 1, or null = auto (caps the basis at ~800 MB:
+    #          100 at N=31, ~40 at N=63)
+    gmres_restart: 200
+
+    # Newton convergence tolerance, applied to the F block and the pressure block
+    # separately, each relative to its own residual at the start of the
+    # sub-increment. Options: any float > 0 (1.e-5 is the built-in default)
+    tol_rel: 1.e-5
+
+    # Smallest sub-step the load-step cutter may fall to, as a fraction of the
+    # original increment. A failed increment halves the step and retries; once
+    # the step drops below this fraction the run is marked "failed" and stops,
+    # keeping the results up to the last converged boundary.
+    # Options: any float in (0, 1]; 1.0 = no cutting allowed, 0.125 = down to 1/8
+    min_substep_ratio: 0.25
+
+    # Which homogeneous tangent the Green preconditioner linearises around.
+    # "mean" is the classical volume average (dominated by the stiff phase at
+    # high contrast), "matrix" averages matrix voxels only (best at high
+    # contrast), "mid" is the unweighted average of the two phase averages.
+    # Options: mean | matrix | mid
+    reference: matrix
+
+    # Derivative symbol used for the Green (compatibility) projection.
+    # "fourier" = exact trigonometric derivative (Moulinec-Suquet / Galerkin);
+    # "willot" = Willot (2015) rotated finite-difference scheme, less ringing at
+    # sharp phase interfaces. Options: fourier | willot
+    discretization: fourier
+
+    # true = restrict the reference preconditioner to the compatible subspace, so
+    # it cannot inject null-space (non-gradient) content into the correction.
+    # Options: true | false
+    precond_restrict: true
+
+    # How the inner (linear) tolerance is chosen each Newton step.
+    # "eisenstat_walker" = inexact Newton, loose early and tightening as the
+    # nonlinear residual falls; "fixed" = always use inner_rtol.
+    # Options: eisenstat_walker | fixed
+    forcing: eisenstat_walker
+
+    # Inner relative tolerance used when forcing is "fixed" (ignored otherwise).
+    # Options: any float in (0, 1)
+    inner_rtol: 1.e-6
+
+    # Loosest inner tolerance Eisenstat-Walker may use (also the value of the
+    # very first solve of each sub-increment, which has no residual history).
+    # Requires 0 < eta_min <= eta_max < 1. Options: any float in (0, 1)
+    eta_max: 1.0e-2
+
+    # Tightest inner tolerance Eisenstat-Walker may fall to.
+    # Options: any float in (0, eta_max]
+    eta_min: 1.0e-3
+
+  phases:
+    # Phase id of the matrix (soft) phase.
+    matrix_phase: 0       # Keep at 0
+
+    # Phase id of the filler (stiff) phase.
+    filler_phase: 1       # Keep at 1
+
+    # Key to read out of the structure .npz that holds the N^3 phase array.
+    # Options: any array name present in the .npz (the generator writes "phase")
+    phase_key: phase
+
+
+  outputs:
+    # true = render the standard result plots (stress-strain etc.) from
+    # output.csv after the solve, into the case's output folder.
+    # Options: true | false
+    save_plots: true
+
+    # Resolution of those plots. Options: any integer (150 screen, 300+ print)
+    plot_dpi: 200
+
+    # true = also dump the final local fields (F, P, phase, pressure) as a VTI
+    # volume for ParaView. Large files: ~N^3 x 20 floats. Options: true | false
+    save_fields: false
+
+    # File name of that VTI dump inside the case output folder.
+    # Options: any name ending in .vti
+    field_filename: fields.vti
+
+  charge:
+    # Loading / material definition file: matrix line, filler line, macroscopic
+    # dF, and the per-component F-vs-P control mask. Determines the constitutive
+    # model (1.0 Neo-Hookean, 2.0 Mooney-Rivlin), both moduli, and the load case.
+    # Left unset, the solver looks for charge.txt next to the structure.
+    # Options: any file in FFT_simulation/Run_configs/Charges/, or your own
+    path: FFT_simulation/Run_configs/Charges/Neo_1.0_E10-1000.txt
+
+
+# --- batch --------------------------------------------------------------------
+# Only read when run.mode is "batch". Builds one case per matched structure file,
+# named after the file stem, all sharing `defaults`.
+batch:
+  structures:
+    # Glob for the structure files, relative to base_path. Required in batch mode.
+    # Options: any glob pattern
+    glob: microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/*.npz
+
+    # Keep only files whose *basename* matches one of these patterns (fnmatch).
+    # Options: a string, a list of strings, or omit for no filtering
+    include: ["*_voxel.npz"]
+
+    # Drop files whose basename matches one of these patterns, applied after
+    # include. Options: a string, a list of strings, or omit
+    exclude: ["test_*"]
+
+    # Run order of the matched files. Options: name (case-insensitive basename) |
+    #                                          path (full path) | none
+    sort: name
+
+
+# --- sweep --------------------------------------------------------------------
+# Only read by contrast_sweep.py, and it replaces both `batch:` and `cases:`.
+# Every structure is run at every filler modulus: len(structures) x len(filler_e)
+# cases, laid out as <output_root>/E<matrix_e>-<filler_e>/<stem>_output/.
+# A charge file per contrast is generated in Run_configs/Charges/ if missing; an
+# existing file of that name is reused only if its materials actually match.
+sweep:
+  # Constitutive model number written into the generated charge files, resolving
+  # to fg/constitutive_incompressible/<model>.py.
+  # Options: 1.0 (Neo-Hookean) | 2.0 (Mooney-Rivlin)
+  model: 1.0
+
+  # Young's modulus of the matrix phase, held fixed across the ladder. Sets the
+  # denominator of the contrast. Options: any float > 0 (MPa)
+  matrix_e: 10
+
+  # Poisson ratio of the matrix. Near-incompressible rubber sits at 0.48-0.4999.
+  # Options: any float in (0, 0.5)
+  matrix_nu: 0.48
+
+  # Poisson ratio of the filler. Options: any float in (0, 0.5)
+  filler_nu: 0.30
+
+  # Total macroscopic F11 written into the charge file. solver.increments splits
+  # this into steps. Options: any float > 0 (1.0 = 100% engineering strain)
+  strain: 1.0
+
+  # The contrast ladder: one run per value, contrast = filler_e / matrix_e.
+  # Options: a list of floats > 0 (MPa)
+  filler_e: [100, 250, 500, 1000, 2500, 5000, 7500]
+
+  # Where the generated charge files are written.
+  # Options: any directory, or omit for FFT_simulation/Run_configs/Charges
+  # charge_dir: FFT_simulation/Run_configs/Charges
+
+  # The structures to sweep. Either an explicit list of .npz paths (each must
+  # exist), or the same {glob, include, exclude, sort} mapping as batch.structures.
+  # Options: a list of paths | a mapping with a glob key
+  structures:
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_15.65_id6_voxel.npz
+    - microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_30.40_id23_voxel.npz
+  # structures:
+  #   glob: microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/*.npz
+  #   sort: name
+
+
+# --- cases --------------------------------------------------------------------
+# Only read when run.mode is "cases". One entry per run; each may set any key
+# from `defaults` above, which is then deep-merged over the defaults.
+cases:
+  # Minimal case: everything else comes from defaults.
+  #
+  # name: label for this case. Used in error messages and as {case_name} in
+  # naming.case_template. Options: any string
+  - name: baseline_phr20
+
+    # The microstructure to solve. Required for every case. Points at the .npz
+    # written by the generator (holding the N^3 phase array), or at a directory
+    # containing one .npz / a phase.txt. Options: any path
+    structure_path: microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_20.49_id20_voxel.npz
+
+  # Fully overriding case: shows that any defaults key can be set per case, and
+  # that the output location can be pinned explicitly.
+  - name: phr20_high_contrast_willot
+    structure_path: microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_20.49_id20_voxel.npz
+
+    # Parent directory for this case's output folder, overriding
+    # experiment.output_root. Options: any path
+    output_path: Results/my_experiment/E10-5000
+
+    # Exact name of this case's output folder inside output_path, overriding both
+    # naming.case_template and the "<stem>_output" default. Options: any folder name
+    output_name: phr_20.49_id20_willot_output
+
+    # Per-case logging, overriding execution.log_to_file. Options: true | false
+    log_to_file: true
+
+    charge:
+      path: FFT_simulation/Run_configs/Charges/Neo_1.0_E10-5000.txt
+
+    solver:
+      N: 63
+      preconditioner: green_jacobi
+      reference: matrix
+      discretization: willot
+      gmres_restart: 100
+      min_substep_ratio: 0.125
+
+    outputs:
+      save_fields: true
+      field_filename: fields.vti
+
+
+# =============================================================================
+# Also accepted, kept working for older configs - prefer the forms above:
+#
+#   run_mode: cases                 # same as run.mode
+#   single_or_batch: 0              # 0 -> cases, 1 -> batch
+#   charge_path: <path>             # same as charge.path
+#   output_path: <path>             # top level of a case, same as outputs.output_path
+#   solver.incre_list: [0.1, 0.1]   # same as solver.increments
+#
+# Read by nothing (present in some existing configs, silently ignored):
+#   solver.max_newton               # the Newton loop has no iteration cap; it
+#                                   # ends on convergence, a failed line search,
+#                                   # or the GMRES cap -> load-step cut
+#   solver.savemodel                # removed: the solver now always writes
+#                                   # output.csv and solver_stats.json
+# =============================================================================

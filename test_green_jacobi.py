@@ -104,7 +104,7 @@ def capture(charge, precond, reference="matrix"):
     prob = mx.FFTSolver(VOXEL, charge_path=charge,
                         output_path=os.path.join(SCRATCH, "cap"), N=N, output_name=".")
     try:
-        prob.calculate(incre_list=[0.1], savemodel="no", preconditioner=precond,
+        prob.calculate(incre_list=[0.1], preconditioner=precond,
                        reference=reference, precond_restrict=True, forcing="fixed",
                        inner_rtol=1e-6)
     except Abort:
@@ -146,7 +146,7 @@ def solve_run(tag, charge, precond, reference, increments, restart=400):
                         output_path=path, N=N, output_name=".")
     t0 = time.time()
     with open(os.path.join(path, "log"), "w") as fh, contextlib.redirect_stdout(fh):
-        prob.calculate(incre_list=[0.1]*increments, savemodel="normal",
+        prob.calculate(incre_list=[0.1]*increments,
                        preconditioner=precond, reference=reference,
                        precond_restrict=True, forcing="eisenstat_walker",
                        max_gmres_iter=20000, gmres_restart=restart)
@@ -170,7 +170,7 @@ def main():
     hetero = hetero_charge(args.contrast)
 
     print("\n=== 1. HOMOGENEOUS body: Green-Jacobi must collapse onto Green ===")
-    ident_g, _ = identity_error_and_compatibility(homo, "reference", "Green")
+    ident_g, _ = identity_error_and_compatibility(homo, "green", "Green")
     ident_gj, incompat_gj = identity_error_and_compatibility(homo, "green_jacobi", "Green-Jacobi")
     assert ident_gj < 1e-9, ("Green-Jacobi is NOT the operator inverse on a "
                              "homogeneous body ({:.2e}) - construction is wrong".format(ident_gj))
@@ -193,7 +193,7 @@ def main():
     print("%-16s %-26s %8s %7s %8s %14s" % ("preconditioner", "status", "krylov", "newton", "wall", "P11"))
     print("-" * 88, flush=True)
     out = {}
-    for precond, label in (("reference", "Green"), ("green_jacobi", "Green-Jacobi")):
+    for precond, label in (("green", "Green"), ("green_jacobi", "Green-Jacobi")):
         r = solve_run(label.replace("-", "_"), hetero, precond, "matrix", args.increments)
         out[label] = r
         print("%-16s %-26s %8d %7d %7.0fs %14s" % (

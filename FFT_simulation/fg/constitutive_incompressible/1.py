@@ -4,7 +4,7 @@ Created on Fri May  7 04:23:55 2021
 
 @author: WANG Mingchuan
 
-incompressible
+incompressible Neo-Hookean
 """
 
 import numpy as np

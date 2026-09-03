@@ -150,6 +150,29 @@ def converged_loads(stats):
     ]
 
 
+def nominal_checkpoints(stats, count):
+    """The `count` loads at which whole prescribed increments completed, or None.
+
+    ``converged_loads`` lists every sub-step the solver accepted, so after a step
+    cut it holds far more entries than output.csv has rows -- the CSV gets one
+    row per *prescribed* increment. The sub-steps of a cut increment sum back to
+    the nominal step, so the rows are the loads sitting on the nominal grid.
+    """
+    increments = (stats or {}).get("increments", [])
+    if not increments:
+        return None
+    nominal = max(float(increment["step"]) for increment in increments)
+    if nominal <= 0:
+        return None
+    checkpoints = [
+        load for load in converged_loads(stats)
+        if abs(load / nominal - round(load / nominal)) < 1e-6
+    ]
+    # Only trust the reconstruction when it lands on exactly the rows the CSV
+    # has; anything else means the run did not use one uniform increment.
+    return checkpoints if len(checkpoints) == count else None
+
+
 def load_run(run_dir):
     """One simulation as a dict, or None when it holds no usable curve.
 
@@ -161,10 +184,14 @@ def load_run(run_dir):
     if f11 is None:
         return None
 
+    # The 3-digit F11 column is replaced by the exact loads whenever they can be
+    # matched to the CSV's rows one for one -- directly, or, after step cuts, by
+    # the loads that complete a whole prescribed increment. Without this the x
+    # values of a 0.025 ramp alternate 0.02 / 0.03 while P11 rises smoothly,
+    # which shows up as a visible zig-zag in a stress-strain curve.
     loads = converged_loads(stats)
-    # The exact loads replace the 3-digit F11 column only when they describe the
-    # same increments; a mismatch means the two files disagree, and the CSV --
-    # the file the stresses came from -- wins.
+    if len(loads) != len(f11):
+        loads = nominal_checkpoints(stats, len(f11)) or []
     if len(loads) == len(f11):
         f11 = 1.0 + np.asarray(loads)
 
@@ -200,7 +227,7 @@ def load_run(run_dir):
 
 
 # ------------------------------------------------------------------ whole sweep
-def _contrast_from_dirname(name):
+def contrast_from_dirname(name):
     match = _CONTRAST_DIR_RE.match(name)
     if not match:
         return None
@@ -248,7 +275,7 @@ def load_sweep(sweep_dir):
             known = {run[key] for run in group if run[key] is not None}
             shared = known.pop() if len(known) == 1 else None
             if key == "contrast" and shared is None:
-                shared = _contrast_from_dirname(contrast_dir)
+                shared = contrast_from_dirname(contrast_dir)
             for run in group:
                 if run[key] is None:
                     run[key] = shared

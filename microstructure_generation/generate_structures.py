@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """YAML-driven runner for generating many 3D filler microstructures.
 
-Reads a generation config (generation_phr_sweep.yaml), expands it into
+Reads a generation config (Run_configs/generation_phr_sweep.yaml), expands it into
 per-structure specs, generates them (optionally in parallel), records the
 resulting PHR of each, and writes a manifest.csv.
 
 Usage:
-    python generate_structures.py generation_phr_sweep.yaml
+    python generate_structures.py Run_configs/generation_phr_sweep.yaml
     python generate_structures.py <config> --dry-run
     python generate_structures.py <config> --max-workers 8 --mode cases
 """

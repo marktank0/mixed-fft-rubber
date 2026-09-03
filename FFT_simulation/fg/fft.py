@@ -25,6 +25,7 @@ from fg.io_paths import (
 )
 from fg.preconditioning import (
     DISCRETIZATIONS,
+    PRECONDITIONER_ALIASES,
     REFERENCE_MODES,
     apply_standard_reference_preconditioner,
     build_Ghat4,
@@ -209,7 +210,6 @@ class FFTSolver:
         self,
         increment = 10,
         incre_list=[],
-        savemodel="no",
         give_Ghat=False,
         Ghat_given=[],
         preconditioner=None,
@@ -221,8 +221,10 @@ class FFTSolver:
     ):
         """ """
         #
-        if preconditioner not in (None, "none", "reference"):
-            raise ValueError("Unknown preconditioner {!r}; use None or 'reference'.".format(preconditioner))
+        # "reference" is the old name for "green"; kept as an alias.
+        preconditioner = PRECONDITIONER_ALIASES.get(preconditioner, preconditioner)
+        if preconditioner not in (None, "none", "green"):
+            raise ValueError("Unknown preconditioner {!r}; use None or 'green'.".format(preconditioner))
         if reference not in REFERENCE_MODES:
             raise ValueError("Unknown reference {!r}; use one of {}.".format(reference, REFERENCE_MODES))
         if discretization not in DISCRETIZATIONS:
@@ -335,7 +337,7 @@ class FFTSolver:
                 cg_callback = self.__progress_counter(G_K_dF, b, label="cg")
                 Aop = sp.LinearOperator(shape=(F.size,F.size),matvec=G_K_dF,dtype='float')
                 Mop = None
-                if preconditioner == "reference":
+                if preconditioner == "green":
                     K_ref = reference_average(K4, reference, mask_a, mask_b)
                     zero_mode_free = [3*i + j for i,j in self.pb.stress_control]
                     inv_symbol = build_standard_reference_symbol(
@@ -379,10 +381,9 @@ class FFTSolver:
         #-------------------------------post 
         print("finish!")
         #
-        if savemodel == "normal" or savemodel == "both":
-            #save Fs and Ps
-            self.__save_F_P(self.path)
-            print("F and P are saved to output.csv")
+        #save Fs and Ps
+        self.__save_F_P(self.path)
+        print("F and P are saved to output.csv")
         if save_fields:
             field_file = save_vti_cell_fields(
                 self.path,

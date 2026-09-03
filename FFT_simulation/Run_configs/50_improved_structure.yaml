@@ -30,9 +30,8 @@ defaults:
     increments:
       repeat: 10
       value: 0.10
-    preconditioner: reference
+    preconditioner: green
     diagnostics: false
-    savemodel: normal
     max_gmres_iter: 600
     min_substep_ratio: 0.25
     #tol_rel:

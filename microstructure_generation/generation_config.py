@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """YAML configuration helpers for the microstructure generation runner.
 
-Loads a generation config (see generation_phr_sweep.yaml) and expands it into a
+Loads a generation config (see Run_configs/generation_phr_sweep.yaml) and expands it into a
 flat list of per-structure parameter dicts ("specs") that
 combined_particle_models.generate_and_save can consume directly.
 """

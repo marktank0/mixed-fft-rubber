@@ -4,7 +4,7 @@ Created on Mon June 15 21:23:55 2026
 
 @author: Mark Tankink
 
-incompressible
+incompressible Mooney-Rivlin
 """
 
 import numpy as np

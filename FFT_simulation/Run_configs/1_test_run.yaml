@@ -29,9 +29,8 @@ defaults:
     increments:
       repeat: 10
       value: 0.1
-    preconditioner: reference
+    preconditioner: green
     diagnostics: false
-    savemodel: normal
     max_newton: 100
     min_substep_ratio: 0.125
     #tol_rel: 

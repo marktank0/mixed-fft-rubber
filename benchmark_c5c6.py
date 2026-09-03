@@ -87,10 +87,16 @@ def run(tag, module, structure, charge, N, incre, out_dir, **kw):
     os.makedirs(path, exist_ok=True)
     prob = module.FFTSolver(structure, charge_path=charge, output_path=path,
                             N=N, output_name=".")
+    # the pinned baseline solver predates both changes: it still calls the
+    # Green preconditioner "reference", and still needs savemodel to write
+    # output.csv (the live solver always saves)
+    base = "_baseline" in module.__name__
+    precond = "reference" if base else "green"
+    if base:
+        kw = dict(kw, savemodel="normal")
     t0 = time.time()
     try:
-        prob.calculate(incre_list=incre, savemodel="normal",
-                       preconditioner="reference", **kw)
+        prob.calculate(incre_list=incre, preconditioner=precond, **kw)
     except Exception as exc:                       # keep the sweep going
         return {"status": "ERROR:" + type(exc).__name__, "wall": time.time()-t0,
                 "krylov": None, "newton": None, "P11": None, "cuts": None}

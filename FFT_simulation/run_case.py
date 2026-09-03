@@ -23,9 +23,8 @@ def _run_case_impl(case):
     output_path = case.get("output_path")
     N = _case_value(case, "N", 31)
     incre_list = _case_value(case, "incre_list", [0.1]*10)
-    preconditioner = _case_value(case, "preconditioner", "reference")
+    preconditioner = _case_value(case, "preconditioner", "green")
     diagnostics = _case_value(case, "diagnostics", False)
-    savemodel = _case_value(case, "savemodel", "normal")
     save_plots = _case_value(case, "save_plots", True)
     plot_dpi = _case_value(case, "plot_dpi", 200)
     matrix_phase = _case_value(case, "matrix_phase", 0)
@@ -61,7 +60,6 @@ def _run_case_impl(case):
 
     prob.calculate(
         incre_list=incre_list,
-        savemodel=savemodel,
         preconditioner=preconditioner,
         diagnostics=diagnostics,
         save_fields=save_fields,

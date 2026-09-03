@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Is the Green preconditioner actually worth it? Head-to-head, same everything else.
 
-The Green/reference preconditioner costs roughly one extra FFT round trip per
+The Green preconditioner costs roughly one extra FFT round trip per
 Krylov iteration - at N=31 its apply is ~63 ms against ~59 ms for the operator
 matvec itself, so it very nearly DOUBLES the cost of an iteration. It only pays
 off if it more than halves the iteration count. That trade swings with contrast
@@ -12,7 +12,7 @@ than assuming the contrast-100 numbers carry over.
 
 Four solvers, identical in every other respect:
 
-  reference     Green/reference preconditioner, applied through GMRES (production)
+  green         Green preconditioner, applied through GMRES (production)
   green_jacobi  Green wrapped in a local diagonal (Jacobi) scaling, J^1/2 G J^1/2,
                 the "J-FFT" of Ladecky et al. (CMAME 461, 2026). It targets a
                 DIFFERENT failure mode than Green: a tangent that varies smoothly
@@ -73,14 +73,14 @@ DEFAULT_STRUCTURES = os.path.join(
 
 SOLVERS = {
     # label          preconditioner kwarg passed to FFTSolver.calculate
-    "reference": "reference",
+    "green": "green",
     "green_jacobi": "green_jacobi",
     "gmres": "gmres",
     "cg": None,
 }
 
 # Solvers that build a Green symbol and so take a reference tangent.
-NEEDS_REFERENCE = ("reference", "green_jacobi")
+NEEDS_REFERENCE = ("green", "green_jacobi")
 
 # Baseline every speed-up in the summary is measured against.
 BASELINE = "gmres"
@@ -153,7 +153,6 @@ def run_case(args, structure, solver, out_dir, result_path):
                             N=args.n, output_name=".")
         kwargs = dict(
             incre_list=[args.step]*args.increments,
-            savemodel="normal",
             preconditioner=SOLVERS[solver],
             tol_rel=args.tol_rel,
             max_gmres_iter=args.max_gmres_iter,
@@ -293,13 +292,13 @@ def summarise(records, out_root, args):
 
     # Green vs Green-Jacobi head to head, which is the comparison the J-FFT
     # paper is actually about.
-    if "reference" in args.solvers and "green_jacobi" in args.solvers:
+    if "green" in args.solvers and "green_jacobi" in args.solvers:
         lines.append("## Green-Jacobi vs Green")
         lines.append("")
         lines.append("| structure | Krylov speed-up | wall speed-up | same P11? |")
         lines.append("|---|---|---|---|")
         for s in structures:
-            a, g = by.get((s, "green_jacobi")), by.get((s, "reference"))
+            a, g = by.get((s, "green_jacobi")), by.get((s, "green"))
             if not a or not g or a["error"] or g["error"]:
                 continue
             if not a["krylov_total"] or not g["krylov_total"]:
@@ -326,7 +325,7 @@ def summarise(records, out_root, args):
         lines.append("| structure | preconditioner | per-solve Krylov |")
         lines.append("|---|---|---|")
         for s in structures:
-            for solver in ("reference", "green_jacobi"):
+            for solver in ("green", "green_jacobi"):
                 r = by.get((s, solver))
                 if not r or r["error"] or not r.get("krylov_per_solve"):
                     continue
@@ -362,9 +361,9 @@ def main():
                    help="charge file name in Run_configs/Charges, or a path "
                         "(default Neo_1.0_E10-500.txt = contrast 50; "
                         "Neo_1.0_E10-100.txt = contrast 10)")
-    p.add_argument("--solvers", default="reference,green_jacobi,gmres",
-                   help="comma list from {reference,green_jacobi,gmres,cg} "
-                        "(default reference,green_jacobi,gmres)")
+    p.add_argument("--solvers", default="green,green_jacobi,gmres",
+                   help="comma list from {green,green_jacobi,gmres,cg} "
+                        "(default green,green_jacobi,gmres)")
     p.add_argument("--increments", type=int, default=4, help="number of load increments")
     p.add_argument("--step", type=float, default=0.05, help="size of each load increment")
     p.add_argument("--tol-rel", type=float, default=1.0e-5, dest="tol_rel")

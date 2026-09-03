@@ -38,18 +38,21 @@ valid stress-strain data well past 30% strain. Add a filter on it in
 | `build_dataset.py` | Scans the solver outputs, writes `dataset_index.csv` (one row per usable case, with the interpolated label) |
 | `dataset.py` | `MicrostructureDataset` + the train/val split |
 | `model.py` | `StressCNN` — four conv blocks, global average pool, scalar head |
-| `train.py` | Training loop, checkpoints and history into `runs/<name>/` |
+| `train.py` | Training loop, checkpoints and history into `runs/<name>/`; single-GPU or DDP |
+| `dist_utils.py` | Rank bookkeeping, device selection and cross-rank reductions for DDP |
+| `sweep.py` | Runs one independent training per GPU, in parallel |
 | `evaluate.py` | Scores a checkpoint on its held-out split, writes a parity plot |
+| `run_train_gpu.sbatch` | SLURM job for a multi-GPU node (`MODE=sweep` or `MODE=ddp`) |
 
 ## Usage
 
-Build the index once:
+Build the index once (CPU only, no torch needed):
 
 ```bash
 python CNN/build_dataset.py
 ```
 
-Train:
+Train on one GPU:
 
 ```bash
 python CNN/train.py --epochs 200 --batch-size 4
@@ -60,6 +63,52 @@ Evaluate a finished run:
 ```bash
 python CNN/evaluate.py --run-dir CNN/runs/20260903_120000
 ```
+
+## Using more than one GPU
+
+There are two modes, and at this dataset size they are not equally good.
+
+**`sweep.py` — one whole model per GPU (recommended).** Four GPUs run four
+independent trainings on four different split seeds, in the same wall time one
+run would take. With only 19 validation cases a single score is very noisy, so
+the spread across seeds is the number you should actually trust.
+
+```bash
+python CNN/sweep.py --gpus 0,1,2,3 --seeds 0,1,2,3 -- --epochs 200
+```
+
+Each run writes `CNN/runs/<tag>_seed<N>/` plus a matching `.log`. Fewer GPUs
+than seeds is fine — runs queue onto GPUs as they free up.
+
+**`torchrun` — one model split across GPUs (DDP).** Useful if you grow the
+dataset or the model; not much help on 100 training cases.
+
+```bash
+torchrun --standalone --nproc_per_node=4 CNN/train.py --epochs 200 --batch-size 4
+```
+
+Under DDP:
+
+- `--batch-size` is **per GPU**. Four GPUs at `--batch-size 4` is an effective
+  batch of 16, so consider `--scale-lr` (multiplies the LR by the world size).
+- BatchNorm is converted to `SyncBatchNorm`, because a per-GPU batch of 4 gives
+  useless per-device statistics. `--no-sync-bn` opts out.
+- Validation runs on rank 0 over the *whole* validation set. Sharding it would
+  make `DistributedSampler` pad with duplicate cases and quietly bias the
+  metrics — with 19 cases over 4 ranks that is a real distortion, not a
+  rounding error.
+- Only rank 0 prints, checkpoints and writes `history.csv`.
+- `train.py` warns if the training set is too small for the number of ranks.
+
+On SLURM, submit the provided job script:
+
+```bash
+sbatch --export=MODE=sweep CNN/run_train_gpu.sbatch
+```
+
+Check the partition name and `--gres` line in that file against your cluster
+before the first submit — they are guesses based on your existing
+`run_fix_c5_c6.sbatch`, which is CPU-only.
 
 ## Model
 
@@ -80,8 +129,11 @@ moves the loading axis onto a different structure direction.
 
 ## Notes before you run this
 
-- **PyTorch is not installed in this environment.** `pip install torch` (a CUDA
-  build if you want the GPU) before running anything here.
+- **PyTorch is not installed on this machine**, so everything torch-related is
+  syntax-checked but not executed. The data pipeline (`build_dataset.py`) *has*
+  been run against the real files. Install a CUDA build of torch on the server
+  before the first training run, and treat the first DDP launch as a smoke test
+  (`--epochs 2`) rather than a full run.
 - 119 samples is a very small dataset for a 3D CNN. Expect the augmentation and
   the weight decay to matter more than the architecture. If validation R^2 stays
   poor, compare against the trivial baseline of predicting from filler volume

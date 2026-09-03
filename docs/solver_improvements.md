@@ -312,7 +312,7 @@ The robustness knobs are plumbed through `simulation_config.py` ->
 | `min_substep_ratio` | 1/16 | smallest allowed sub-step as a fraction of the original increment; set `1.0` to disable retries entirely, i.e. "first failure stops the case" |
 | `tol_rel` | 1e-5 | relative residual tolerance per block (Section 2) |
 | `gmres_restart` | auto | GMRES restart length; auto = memory-aware (Section 7) |
-| `preconditioner` | `reference` | unchanged from before: `reference`, `gmres`, or none |
+| `preconditioner` | `green` | `green` (the Green preconditioner, called `reference` before this rename - the old spelling is still accepted), `green_jacobi`, `gmres`, or none |
 
 All results up to the last converged increment are saved in every
 stopping scenario (cap exceeded, cuts exhausted, external kill).

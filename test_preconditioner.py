@@ -72,7 +72,7 @@ def capture(restrict, charge):
     prob = mx.FFTSolver(VOXEL, charge_path=charge,
                         output_path=os.path.join(SCRATCH, "homchk"), N=N, output_name=".")
     try:
-        prob.calculate(incre_list=[0.1], savemodel="no", preconditioner="reference",
+        prob.calculate(incre_list=[0.1], preconditioner="green",
                        reference="mean", forcing="fixed", precond_restrict=restrict)
     except Abort:
         pass

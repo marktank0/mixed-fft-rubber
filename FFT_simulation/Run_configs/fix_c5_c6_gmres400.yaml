@@ -40,9 +40,8 @@ defaults:
     increments:
       repeat: 10
       value: 0.10
-    preconditioner: reference
+    preconditioner: green
     diagnostics: false
-    savemodel: normal
     # scipy counts restart cycles, not iterations: the effective iteration cap
     # is ceil(max_gmres_iter/gmres_restart) * gmres_restart. 2000/400 = 5 full
     # cycles, so the cap is exactly 2000.

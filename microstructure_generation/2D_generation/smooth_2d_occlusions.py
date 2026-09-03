@@ -22,8 +22,11 @@ from PIL import Image
 from scipy import ndimage
 
 
+# This script lives in microstructure_generation/2D_generation/, so the
+# repository root is two levels up (the generation package is one).
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+GENERATION_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+REPO_ROOT = os.path.abspath(os.path.join(GENERATION_DIR, os.pardir))
 
 DEFAULT_INPUT_DIR = os.path.join(REPO_ROOT, "Structures", "2D_test_set_smoothed")
 DEFAULT_OUTPUT_DIR = os.path.join(REPO_ROOT, "Structures", "2D_test_set_occlusion_smoothed")

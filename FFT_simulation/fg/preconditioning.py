@@ -12,6 +12,13 @@ _FFT_WORKERS = int(os.environ.get("FFT_WORKERS", "1"))
 REFERENCE_MODES = ("mean", "matrix", "mid")
 DISCRETIZATIONS = ("fourier", "willot")
 
+# Deprecated preconditioner spellings -> the canonical name. "reference" named
+# the tangent the Green symbol is built from rather than the operator itself,
+# and read as if it were tied to the unrelated `reference` argument (the
+# mean/matrix/mid tangent mode), so it is now "green". The alias is kept so run
+# configs archived under the old name still replay.
+PRECONDITIONER_ALIASES = {"reference": "green"}
+
 
 def _wave_vectors(N, ndim, discretization):
     """Derivative symbol xi_j of the chosen discretization, on the centred grid.

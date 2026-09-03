@@ -69,7 +69,7 @@ def run(tag, structure, charge, N, incre, out_dir, mask_f, **kw):
     prob = mx.FFTSolver(structure, charge_path=charge, output_path=path, N=N, output_name=".")
     t0 = time.time()
     try:
-        prob.calculate(incre_list=incre, savemodel="normal", preconditioner="reference",
+        prob.calculate(incre_list=incre, preconditioner="green",
                        reference="mean", forcing="eisenstat_walker",
                        save_fields=True, **kw)
     except Exception as exc:

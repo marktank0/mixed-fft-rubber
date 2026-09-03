@@ -265,9 +265,15 @@ def run_one(task):
             import fg.mxfft as solver_mod
 
         kwargs = dict(task["kwargs"])
-        # the pinned pre-change solver predates every one of these arguments
+        # the pinned pre-change solver predates every one of these arguments,
+        # and still needs savemodel to write output.csv (the live solver
+        # always saves), so the baseline keeps that one argument
         if task["solver"] == "base":
-            kwargs = {}
+            kwargs = {"savemodel": "normal"}
+
+        # the Green preconditioner was called "reference" at the pinned rev, and
+        # that solver validates the name, so the baseline keeps the old spelling
+        default_precond = "reference" if task["solver"] == "base" else "green"
 
         with open(log_path, "w", buffering=1) as log:
             with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
@@ -276,8 +282,8 @@ def run_one(task):
                     output_path=out_dir, N=task["N"], output_name=".",
                 )
                 prob.calculate(
-                    incre_list=[0.1]*task["increments"], savemodel="normal",
-                    preconditioner=kwargs.pop("preconditioner", "reference"),
+                    incre_list=[0.1]*task["increments"],
+                    preconditioner=kwargs.pop("preconditioner", default_precond),
                     max_gmres_iter=task["max_gmres_iter"],
                     gmres_restart=task["gmres_restart"],
                     **kwargs

@@ -52,7 +52,7 @@ class Shim:
 mx.sp = Shim(spla)
 prob = mx.FFTSolver(PHASE, charge_path=CHARGE, output_path=os.path.dirname(PHASE), N=N, output_name=".")
 try:
-    prob.calculate(incre_list=[0.05], savemodel="no", preconditioner="reference",
+    prob.calculate(incre_list=[0.05], preconditioner="green",
                    reference="mean", forcing="fixed", inner_rtol=1e-6)
 except Abort:
     pass

@@ -28,6 +28,7 @@ from fg.io_paths import (
 )
 from fg.preconditioning import (
     DISCRETIZATIONS,
+    PRECONDITIONER_ALIASES,
     REFERENCE_MODES,
     apply_green_jacobi_preconditioner,
     apply_mixed_reference_preconditioner,
@@ -242,7 +243,6 @@ class FFTSolver:
         self,
         increment = 10,
         incre_list=[],
-        savemodel="no",
         give_Ghat=False,
         Ghat_given=[],
         preconditioner=None,
@@ -267,9 +267,14 @@ class FFTSolver:
     ):
         """ """
         #
-        if preconditioner not in (None, "none", "gmres", "reference", "green_jacobi"):
+        # "reference" was the old name for "green": it says which tangent the
+        # symbol is built from, not which operator it is, and collided with the
+        # unrelated `reference` argument below (the mean/matrix/mid tangent
+        # mode). Accepted as an alias so archived run configs still replay.
+        preconditioner = PRECONDITIONER_ALIASES.get(preconditioner, preconditioner)
+        if preconditioner not in (None, "none", "gmres", "green", "green_jacobi"):
             raise ValueError(
-                "Unknown preconditioner {!r}; use None, 'gmres', 'reference' or "
+                "Unknown preconditioner {!r}; use None, 'gmres', 'green' or "
                 "'green_jacobi'.".format(preconditioner))
         if reference not in REFERENCE_MODES:
             raise ValueError("Unknown reference {!r}; use one of {}.".format(reference, REFERENCE_MODES))
@@ -461,7 +466,7 @@ class FFTSolver:
                     matvec=lambda vec: apply_green_jacobi_preconditioner(vec, inv_symbol, d, Ghat4),
                     dtype='float',
                 )
-            if preconditioner == "reference":
+            if preconditioner == "green":
                 K_ref = reference_average(state["K4"], reference, mask_a, mask_b)
                 J_ref = reference_average(state["JFmT"], reference, mask_a, mask_b)
                 kappa_inv_ref = float(reference_average(state["Kappa_inv"], reference, mask_a, mask_b))
@@ -476,7 +481,7 @@ class FFTSolver:
                     matvec=lambda vec: apply_mixed_reference_preconditioner(vec, inv_symbol),
                     dtype='float',
                 )
-            if preconditioner in ("gmres", "reference", "green_jacobi"):
+            if preconditioner in ("gmres", "green", "green_jacobi"):
                 gmres_callback = self.__gmres_progress_counter(label="gmres")
                 # scipy's maxiter counts restart cycles, not iterations, so
                 # convert the total-iteration cap to whole cycles
@@ -690,10 +695,9 @@ class FFTSolver:
             #
             # incremental save so an interrupted or failed run keeps
             # everything up to the last completed increment boundary
-            if savemodel == "normal" or savemodel == "both":
-                self.__save_F_P(self.path)
-                self.__save_stats(self.path)
-                print("intermediate results saved ({} increments in output.csv)".format(len(self.Ps)))
+            self.__save_F_P(self.path)
+            self.__save_stats(self.path)
+            print("intermediate results saved ({} increments in output.csv)".format(len(self.Ps)))
             #
         #-------------------------------post
         if failed:
@@ -720,10 +724,9 @@ class FFTSolver:
         self.pressure_final = YALI
         #
         #
-        if savemodel == "normal" or savemodel == "both":
-            #save Fs and Ps
-            self.__save_F_P(self.path)
-            print("F and P are saved to output.csv")
+        #save Fs and Ps
+        self.__save_F_P(self.path)
+        print("F and P are saved to output.csv")
         if save_fields:
             field_file = save_vti_cell_fields(
                 self.path,

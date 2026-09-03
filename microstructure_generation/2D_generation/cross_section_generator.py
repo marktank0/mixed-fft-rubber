@@ -6,17 +6,25 @@ sphere-parameter NPZ files.
 
 import argparse
 import os
+import sys
 
 import numpy as np
+
+# This script lives in microstructure_generation/2D_generation/, so the
+# repository root is two levels up (the generation package is one).
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+GENERATION_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+REPO_ROOT = os.path.abspath(os.path.join(GENERATION_DIR, os.pardir))
+# Put both on sys.path so the sibling-module imports below resolve whether
+# this file is run as a script or imported.
+for _path in (SCRIPT_DIR, GENERATION_DIR, REPO_ROOT):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 try:
     from microstructure_generation.file_viewers.view_npz_3d import load_npz_content
 except ImportError:
     from file_viewers.view_npz_3d import load_npz_content
-
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
 
 DEFAULT_STRUCTURE_INPUT = "Structures/3D_structures/Spheres/1_spheres.npz"
 DEFAULT_AXIS = "z"
