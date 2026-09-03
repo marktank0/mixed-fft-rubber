@@ -46,4 +46,8 @@ Results/test_c5c6/
 FFT_simulation/Run_configs/Charges/bench_*.txt
 Results/bench_discretization/
 Results/benchmark_suite/
+
 Results/HPC/*
+!Results/HPC/Results/
+Results/HPC/Results/*
+!Results/HPC/Results/cases120_63voxel_10contrast/
