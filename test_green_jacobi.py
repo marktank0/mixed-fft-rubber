@@ -18,13 +18,17 @@ import argparse
 import contextlib
 import os
 import shutil
+import tempfile
 import time
 
 import numpy as np
 import scipy.sparse.linalg as spla
 
-import fg.mxfft as mx
-from fg.preconditioning import (
+from project_paths import CHARGES_DIR, ensure_import_paths, project_path
+
+ensure_import_paths()
+import fg.mxfft as mx  # noqa: E402  (needs ensure_import_paths first)
+from fg.preconditioning import (  # noqa: E402
     apply_green_jacobi_preconditioner,
     build_Ghat4,
     build_green_jacobi_symbol,
@@ -32,19 +36,47 @@ from fg.preconditioning import (
 )
 
 N = 31
-SCRATCH = "/tmp/gj_test"
+SCRATCH = os.path.join(tempfile.gettempdir(), "gj_test")
 HOMO = os.path.join(SCRATCH, "charge_homogeneous.txt")
+VOXEL = project_path("3D_samples", "voxels", "1_voxel.npz")
+
+# Matrix phase shared by every charge file written here: Neo-Hookean, E=10,
+# nu=0.48. Contrast is set purely by the filler Young's modulus.
+MATRIX = "1.0\t10\t0.48\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\n"
+TAIL = ("#charge dF\n1.0\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\n"
+        "#type\n0.0\t0.0\t0.0\t0.0\t1.0\t0.0\t0.0\t0.0\t1.0\n")
 
 
 def write_homogeneous():
     os.makedirs(SCRATCH, exist_ok=True)
     with open(HOMO, "w") as fh:
         fh.write("#homogeneous: both phases identical\n")
-        fh.write("1.0\t10\t0.48\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\n")
-        fh.write("1.0\t10\t0.48\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\n")
-        fh.write("#charge dF\n1.0\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\n")
-        fh.write("#type\n0.0\t0.0\t0.0\t0.0\t1.0\t0.0\t0.0\t0.0\t1.0\n")
+        fh.write(MATRIX)
+        fh.write(MATRIX)
+        fh.write(TAIL)
     return HOMO
+
+
+def hetero_charge(contrast):
+    """Charge file for a given filler/matrix stiffness ratio.
+
+    Prefers a committed bench_c<contrast>.txt so the well-worn contrasts stay
+    reproducible, and otherwise writes an equivalent file into the scratch
+    directory -- which is what lets an arbitrary --contrast work.
+    """
+    committed = os.path.join(CHARGES_DIR, "bench_c{}.txt".format(contrast))
+    if os.path.exists(committed):
+        return committed
+
+    os.makedirs(SCRATCH, exist_ok=True)
+    path = os.path.join(SCRATCH, "charge_c{}.txt".format(contrast))
+    with open(path, "w") as fh:
+        fh.write("#generated: filler/matrix stiffness contrast {}\n".format(contrast))
+        fh.write(MATRIX)
+        fh.write("1.0\t{:g}\t0.30\t0.0\t0.0\t0.0\t0.0\t0.0\t0.0\n".format(
+            10.0*float(contrast)))
+        fh.write(TAIL)
+    return path
 
 
 captured = {}
@@ -69,7 +101,7 @@ class Shim:
 def capture(charge, precond, reference="matrix"):
     captured.clear()
     mx.sp = Shim(spla)
-    prob = mx.FFTSolver("3D_samples/voxels/1_voxel.npz", charge_path=charge,
+    prob = mx.FFTSolver(VOXEL, charge_path=charge,
                         output_path=os.path.join(SCRATCH, "cap"), N=N, output_name=".")
     try:
         prob.calculate(incre_list=[0.1], savemodel="no", preconditioner=precond,
@@ -110,7 +142,7 @@ def solve_run(tag, charge, precond, reference, increments, restart=400):
     path = os.path.join(SCRATCH, tag)
     shutil.rmtree(path, ignore_errors=True)
     os.makedirs(path, exist_ok=True)
-    prob = mx.FFTSolver("3D_samples/voxels/1_voxel.npz", charge_path=charge,
+    prob = mx.FFTSolver(VOXEL, charge_path=charge,
                         output_path=path, N=N, output_name=".")
     t0 = time.time()
     with open(os.path.join(path, "log"), "w") as fh, contextlib.redirect_stdout(fh):
@@ -135,7 +167,7 @@ def main():
     args = ap.parse_args()
 
     homo = write_homogeneous()
-    hetero = "3D_samples/Charges/bench_c{}.txt".format(args.contrast)
+    hetero = hetero_charge(args.contrast)
 
     print("\n=== 1. HOMOGENEOUS body: Green-Jacobi must collapse onto Green ===")
     ident_g, _ = identity_error_and_compatibility(homo, "reference", "Green")

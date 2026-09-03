@@ -6,10 +6,16 @@ For every ``phr_*_output`` folder in a results directory this reads
 (F11 deformation gradient = 1 + strain). It then plots P11 (y) against the
 structure's PHR (x), using a different marker for each strain level.
 
+Runs whose solver failed are included by default: their curve up to the last
+increment they managed is still valid, and a failed run that got past the
+requested strain has a perfectly good P11 there. Pass ``--ignore-failed`` to
+leave them out.
+
 Usage:
     python plot_p11_vs_phr.py
     python plot_p11_vs_phr.py Results/30_struct_test_run
     python plot_p11_vs_phr.py <results_dir> --strains 0.3 0.6 1.0 --out plot.png
+    python plot_p11_vs_phr.py <results_dir> --strains 0.3 0.6 1.0 --out plot.png --ignore-failed      # To ignore the failed runs
 """
 
 import argparse
@@ -137,10 +143,15 @@ def main():
     parser.add_argument("--strains", nargs="+", type=float, default=DEFAULT_STRAINS,
                         help="F11 strain levels (deformation gradient = 1 + strain).")
     parser.add_argument("--out", default=None, help="Output image path (PNG).")
+    # Both flags share a dest, so both carry the default: argparse applies them
+    # in order and the later action would otherwise overwrite the earlier one.
     parser.add_argument("--ignore-failed", dest="ignore_failed", action="store_true",
-                        default=True, help="Skip runs whose solver_stats.json says failed (default).")
+                        default=False,
+                        help="Skip runs whose solver_stats.json says failed.")
     parser.add_argument("--include-failed", dest="ignore_failed", action="store_false",
-                        help="Also plot runs whose solver_stats.json says failed.")
+                        default=False,
+                        help="Also plot runs whose solver_stats.json says failed "
+                             "(default).")
     args = parser.parse_args()
 
     out_path = args.out or os.path.join(args.results_dir, "P11_vs_phr.png")

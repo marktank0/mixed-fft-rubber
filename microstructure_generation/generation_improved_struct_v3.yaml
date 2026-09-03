@@ -15,7 +15,7 @@
 version: 1
 
 # Output folder, relative to the repository root (or an absolute path).
-output_dir: microstructure_generation/3D_samples/improved_structures_v4
+output_dir: microstructure_generation/3D_samples/improved_structures_v5
 
 # -----------------------------------------------------------------------------
 # defaults: baseline parameters for EVERY structure. A sweep axis or an explicit
@@ -99,7 +99,7 @@ sweep:
   axes:
     # model1.intensity: { start: 200, stop: 240, step: 20 }
     # other things you could sweep, together or instead:
-    model2.intensity: { start: 3.0, stop: 5.0, step: 0.5 }
+    model2.intensity: { start: 2.5, stop: 5.0, step: 0.5 }
     #model2.max_r1: [0.5, 0.6, 0.7, 0.8]
     # model1.radius: { start: 0.12, stop: 0.18, step: 0.02 }
     # model3.radius: { start: 0.4, stop: 0.6, step: 0.2}

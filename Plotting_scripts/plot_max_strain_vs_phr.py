@@ -13,7 +13,9 @@ the way" and "happened to stall at the last increment" stay distinguishable.
 Usage:
     python Plotting_scripts/plot_max_strain_vs_phr.py
     python Plotting_scripts/plot_max_strain_vs_phr.py <sweep_dir> --show
-    python Plotting_scripts/plot_max_strain_vs_phr.py --stretch --out max_F11.png
+    python Plotting_scripts/plot_max_strain_vs_phr.py <sweep_dir> --out max_F11.png
+    python Plotting_scripts/plot_max_strain_vs_phr.py <sweep_dir> --stretch --out max_F11.png
+
 """
 
 import argparse

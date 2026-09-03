@@ -10,15 +10,24 @@ iterations to save) and with grid size (the symbol build and its pseudo-inverse
 grow as N^3), so it is worth measuring at your actual operating point rather
 than assuming the contrast-100 numbers carry over.
 
-Three solvers, identical in every other respect:
+Four solvers, identical in every other respect:
 
-  reference   Green/reference preconditioner, applied through GMRES  (production)
-  gmres       NO preconditioner, same GMRES                          (the bare control)
-  cg          NO preconditioner, and the solver falls back to CG. Note this is
-              not an apples-to-apples comparison - CG is for symmetric positive
-              definite systems and the mixed tangent is a nonsymmetric saddle
-              point - but it is what preconditioner=None does today, and its
-              iterations are much cheaper, so it is worth seeing.
+  reference     Green/reference preconditioner, applied through GMRES (production)
+  green_jacobi  Green wrapped in a local diagonal (Jacobi) scaling, J^1/2 G J^1/2,
+                the "J-FFT" of Ladecky et al. (CMAME 461, 2026). It targets a
+                DIFFERENT failure mode than Green: a tangent that varies smoothly
+                *within* a phase. That is not the voxel geometry - which is sharp -
+                but the Neo-Hookean tangent, which grades through the matrix once
+                the strain fluctuation appears, i.e. from Newton step 1 onward.
+                So the number to watch is not the total but the per-Newton-step
+                breakdown: expect Green to win step 0 and lose later, if it acts
+                at all at this contrast.
+  gmres         NO preconditioner, same GMRES                        (the bare control)
+  cg            NO preconditioner, and the solver falls back to CG. Note this is
+                not an apples-to-apples comparison - CG is for symmetric positive
+                definite systems and the mixed tangent is a nonsymmetric saddle
+                point - but it is what preconditioner=None does today, and its
+                iterations are much cheaper, so it is worth seeing.
 
 Each (structure, solver) runs in its own subprocess with its own output
 directory, so nothing overwrites anything and one blow-up cannot take down the
@@ -63,11 +72,18 @@ DEFAULT_STRUCTURES = os.path.join(
 )
 
 SOLVERS = {
-    # label       preconditioner kwarg passed to FFTSolver.calculate
+    # label          preconditioner kwarg passed to FFTSolver.calculate
     "reference": "reference",
+    "green_jacobi": "green_jacobi",
     "gmres": "gmres",
     "cg": None,
 }
+
+# Solvers that build a Green symbol and so take a reference tangent.
+NEEDS_REFERENCE = ("reference", "green_jacobi")
+
+# Baseline every speed-up in the summary is measured against.
+BASELINE = "gmres"
 
 
 # --------------------------------------------------------------------------
@@ -118,6 +134,7 @@ def run_case(args, structure, solver, out_dir, result_path):
         "status": "ERROR",
         "krylov_total": None,
         "krylov_max_per_solve": None,
+        "krylov_per_solve": None,
         "newton_total": None,
         "wall_seconds": None,
         "solver_seconds": None,
@@ -147,7 +164,7 @@ def run_case(args, structure, solver, out_dir, result_path):
             eta_min=args.eta_min,
             eta_max=args.eta_max,
         )
-        if solver == "reference":
+        if solver in NEEDS_REFERENCE:
             kwargs.update(reference=args.reference, precond_restrict=True,
                           discretization=args.discretization)
         t0 = time.time()
@@ -163,6 +180,12 @@ def run_case(args, structure, solver, out_dir, result_path):
             status=stats.get("status", "?"),
             krylov_total=int(sum(per_solve)),
             krylov_max_per_solve=int(max(per_solve)) if per_solve else 0,
+            # Krylov cost of each Newton solve of the FIRST increment. This is
+            # the paper's Fig. 9(a): Green is expected to win solve 0, where the
+            # tangent is still piecewise constant, and lose from solve 1 on,
+            # once the strain fluctuation grades it through the matrix.
+            krylov_per_solve=[int(k) for k in
+                              (incs[0].get("krylov_iterations", []) if incs else [])],
             newton_total=int(sum(len(i.get("krylov_iterations", [])) for i in incs)),
             solver_seconds=float(sum(i.get("time_seconds", 0.0) for i in incs)),
             step_cuts=int(stats.get("step_cuts", 0)),
@@ -220,7 +243,12 @@ def summarise(records, out_root, args):
             if r is None:
                 continue
             if r["error"]:
-                lines.append("| {} | {} | ERROR | | | | | | | | |".format(s, solver))
+                # TIMEOUT and CRASHED carry an error string too, and saying
+                # ERROR for all three loses the distinction that matters: a
+                # timeout is a run that was still making progress.
+                lines.append("| {} | {} | {} | | | | {} | | | | |".format(
+                    s, solver, r.get("status") or "ERROR",
+                    fmt(r.get("wall_seconds"), "{:.1f}")))
                 continue
             spi = (r["wall_seconds"]/r["krylov_total"]) if r["krylov_total"] else None
             lines.append("| {} | {} | {}{} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
@@ -230,32 +258,80 @@ def summarise(records, out_root, args):
                 fmt(r["F11"], "{:.3f}"), fmt(r["P11"], "{:.6f}")))
     lines.append("")
 
-    # the actual question: is the preconditioner worth it, per structure?
-    if "reference" in args.solvers and "gmres" in args.solvers:
-        lines.append("## Green preconditioner vs the bare solver (GMRES, no preconditioner)")
+    # the actual question: is each preconditioner worth it, per structure?
+    rivals = [s for s in args.solvers if s != BASELINE]
+    if BASELINE in args.solvers and rivals:
+        lines.append("## Each preconditioner vs the bare solver (GMRES, no preconditioner)")
+        lines.append("")
+        lines.append("| structure | preconditioner | Krylov speed-up | wall speed-up | same P11? |")
+        lines.append("|---|---|---|---|---|")
+        for s in structures:
+            base = by.get((s, BASELINE))
+            if not base or base["error"] or not base["krylov_total"]:
+                continue
+            for solver in rivals:
+                a = by.get((s, solver))
+                if not a or a["error"] or not a["krylov_total"]:
+                    continue
+                note = ""
+                if a["cap_hit"] or base["cap_hit"]:
+                    note = " (truncated - not a measurement)"
+                same = "-"
+                if a["P11"] is not None and base["P11"] is not None:
+                    rel = abs(a["P11"] - base["P11"])/max(abs(base["P11"]), 1e-30)
+                    same = ("yes ({:.1e})".format(rel) if rel < 1e-4
+                            else "**NO ({:.1e})**".format(rel))
+                lines.append("| {} | {} | {:.2f}x | {:.2f}x{} | {} |".format(
+                    s, solver, base["krylov_total"]/a["krylov_total"],
+                    base["wall_seconds"]/a["wall_seconds"], note, same))
+        lines.append("")
+        lines.append("A wall speed-up below 1.0 means the preconditioner is COSTING you time:")
+        lines.append("it roughly doubles the price of an iteration, so it has to more than")
+        lines.append("halve the iteration count to break even. Green-Jacobi adds two more")
+        lines.append("elementwise scalings on top of that, so its bar is slightly higher still.")
+        lines.append("")
+
+    # Green vs Green-Jacobi head to head, which is the comparison the J-FFT
+    # paper is actually about.
+    if "reference" in args.solvers and "green_jacobi" in args.solvers:
+        lines.append("## Green-Jacobi vs Green")
         lines.append("")
         lines.append("| structure | Krylov speed-up | wall speed-up | same P11? |")
         lines.append("|---|---|---|---|")
         for s in structures:
-            a, b = by.get((s, "reference")), by.get((s, "gmres"))
-            if not a or not b or a["error"] or b["error"]:
+            a, g = by.get((s, "green_jacobi")), by.get((s, "reference"))
+            if not a or not g or a["error"] or g["error"]:
                 continue
-            if not a["krylov_total"] or not b["krylov_total"]:
+            if not a["krylov_total"] or not g["krylov_total"]:
                 continue
-            note = ""
-            if a["cap_hit"] or b["cap_hit"]:
-                note = " (truncated - not a measurement)"
+            note = " (truncated - not a measurement)" if (a["cap_hit"] or g["cap_hit"]) else ""
             same = "-"
-            if a["P11"] is not None and b["P11"] is not None:
-                rel = abs(a["P11"] - b["P11"])/max(abs(b["P11"]), 1e-30)
-                same = "yes ({:.1e})".format(rel) if rel < 1e-4 else "**NO ({:.1e})**".format(rel)
+            if a["P11"] is not None and g["P11"] is not None:
+                rel = abs(a["P11"] - g["P11"])/max(abs(g["P11"]), 1e-30)
+                same = ("yes ({:.1e})".format(rel) if rel < 1e-4
+                        else "**NO ({:.1e})**".format(rel))
             lines.append("| {} | {:.2f}x | {:.2f}x{} | {} |".format(
-                s, b["krylov_total"]/a["krylov_total"],
-                b["wall_seconds"]/a["wall_seconds"], note, same))
+                s, g["krylov_total"]/a["krylov_total"],
+                g["wall_seconds"]/a["wall_seconds"], note, same))
         lines.append("")
-        lines.append("A wall speed-up below 1.0 means the preconditioner is COSTING you time:")
-        lines.append("it roughly doubles the price of an iteration, so it has to more than")
-        lines.append("halve the iteration count to break even.")
+        lines.append("### Krylov iterations per Newton solve, first increment")
+        lines.append("")
+        lines.append("The J-FFT claim is not about the total. At Newton solve 0 the strain is")
+        lines.append("uniform, so the tangent is still piecewise constant and Green should win.")
+        lines.append("From solve 1 on the strain fluctuation grades the tangent smoothly through")
+        lines.append("the matrix, which is the regime Green-Jacobi is built for. **Look for the")
+        lines.append("two rows to cross.** If they stay parallel, the Neo-Hookean tangent is not")
+        lines.append("varying enough at this contrast for Green-Jacobi to buy anything.")
+        lines.append("")
+        lines.append("| structure | preconditioner | per-solve Krylov |")
+        lines.append("|---|---|---|")
+        for s in structures:
+            for solver in ("reference", "green_jacobi"):
+                r = by.get((s, solver))
+                if not r or r["error"] or not r.get("krylov_per_solve"):
+                    continue
+                lines.append("| {} | {} | {} |".format(
+                    s, solver, ", ".join(str(k) for k in r["krylov_per_solve"])))
         lines.append("")
 
     text = "\n".join(lines)
@@ -263,8 +339,8 @@ def summarise(records, out_root, args):
         fh.write(text + "\n")
 
     cols = ["structure", "solver", "status", "krylov_total", "krylov_max_per_solve",
-            "newton_total", "wall_seconds", "solver_seconds", "step_cuts", "F11", "P11",
-            "cap_hit", "error"]
+            "krylov_per_solve", "newton_total", "wall_seconds", "solver_seconds",
+            "step_cuts", "F11", "P11", "cap_hit", "error"]
     with open(os.path.join(out_root, "summary.csv"), "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
@@ -286,8 +362,9 @@ def main():
                    help="charge file name in Run_configs/Charges, or a path "
                         "(default Neo_1.0_E10-500.txt = contrast 50; "
                         "Neo_1.0_E10-100.txt = contrast 10)")
-    p.add_argument("--solvers", default="reference,gmres",
-                   help="comma list from {reference,gmres,cg} (default reference,gmres)")
+    p.add_argument("--solvers", default="reference,green_jacobi,gmres",
+                   help="comma list from {reference,green_jacobi,gmres,cg} "
+                        "(default reference,green_jacobi,gmres)")
     p.add_argument("--increments", type=int, default=4, help="number of load increments")
     p.add_argument("--step", type=float, default=0.05, help="size of each load increment")
     p.add_argument("--tol-rel", type=float, default=1.0e-5, dest="tol_rel")

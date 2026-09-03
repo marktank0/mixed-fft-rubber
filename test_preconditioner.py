@@ -13,15 +13,22 @@ import os
 for v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "FFT_WORKERS"):
     os.environ.setdefault(v, "1")
 
+import tempfile
+
 import numpy as np
 import scipy.fft
 import scipy.sparse.linalg as spla
 
-import fg.mxfft as mx
+from project_paths import charge_path, ensure_import_paths, project_path
+
+ensure_import_paths()
+import fg.mxfft as mx  # noqa: E402  (needs ensure_import_paths first)
 
 N = 31
-SCRATCH = "/tmp/claude-0/-home-user-mixed-fft-rubber/1fea60d5-29fd-57d2-a60b-f2d394109bd8/scratchpad"
+SCRATCH = os.path.join(tempfile.gettempdir(), "precond_test")
+os.makedirs(SCRATCH, exist_ok=True)
 HOMO = os.path.join(SCRATCH, "charge_homogeneous.txt")
+VOXEL = project_path("3D_samples", "voxels", "1_voxel.npz")
 
 # identical E *and* identical Poisson ratio in both phases -> truly homogeneous
 with open(HOMO, "w") as fh:
@@ -62,8 +69,8 @@ num_up = 9*N**3
 
 def capture(restrict, charge):
     captured.clear()
-    prob = mx.FFTSolver("3D_samples/voxels/1_voxel.npz", charge_path=charge,
-                        output_path="/tmp/homchk", N=N, output_name=".")
+    prob = mx.FFTSolver(VOXEL, charge_path=charge,
+                        output_path=os.path.join(SCRATCH, "homchk"), N=N, output_name=".")
     try:
         prob.calculate(incre_list=[0.1], savemodel="no", preconditioner="reference",
                        reference="mean", forcing="fixed", precond_restrict=restrict)
@@ -107,7 +114,7 @@ def report(label, charge):
 
 homo = report("HOMOGENEOUS body  (K(x) = K0 exactly -> M^-1 A must BE the identity)", HOMO)
 report("HETEROGENEOUS body, contrast 100  (M^-1 A is only an approximation)",
-       "3D_samples/Charges/bench_c100.txt")
+       charge_path("bench_c100.txt"))
 
 assert homo[True] < 1e-10, (
     "restricted symbol is NOT the operator inverse on a homogeneous body "

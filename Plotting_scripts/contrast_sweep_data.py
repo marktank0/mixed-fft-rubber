@@ -107,6 +107,38 @@ def read_output_csv(run_dir):
     return np.asarray(f11), np.asarray(p11)
 
 
+_TENSOR_COLUMNS = ["{}{}{}".format(name, i, j)
+                   for name in ("F", "P") for i in (1, 2, 3) for j in (1, 2, 3)]
+
+
+def read_output_tensors(run_dir):
+    """(F, P) as (n, 3, 3) arrays from output.csv, or (None, None).
+
+    Needed for the Cauchy stress; the F11/P11 pair on its own cannot give J.
+    """
+    path = os.path.join(run_dir, "output.csv")
+    if not os.path.isfile(path):
+        return None, None
+    with open(path, newline="") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames or any(
+            column not in reader.fieldnames for column in _TENSOR_COLUMNS
+        ):
+            return None, None
+        values = [[float(row[column]) for column in _TENSOR_COLUMNS] for row in reader
+                  if row and row.get("F11")]
+    if not values:
+        return None, None
+    values = np.asarray(values)
+    return values[:, :9].reshape(-1, 3, 3), values[:, 9:].reshape(-1, 3, 3)
+
+
+def cauchy_11(f, p):
+    """sigma_11 = J^-1 (P F^T)_11, the true stress along the tensile axis."""
+    j = np.linalg.det(f)
+    return np.einsum("vk,vk->v", p[:, 0, :], f[:, 0, :]) / j
+
+
 def converged_loads(stats):
     """Cumulative load (= F11 - 1) after every increment the solver accepted."""
     if not stats:
@@ -121,8 +153,8 @@ def converged_loads(stats):
 def load_run(run_dir):
     """One simulation as a dict, or None when it holds no usable curve.
 
-    Keys: phr, dir, status, max_strain, complete, f11, p11, matrix, filler,
-    contrast, volume_fraction.
+    Keys: phr, dir, status, max_strain, complete, f11, p11, sigma11, matrix,
+    filler, contrast, volume_fraction.
     """
     stats = read_solver_stats(run_dir)
     f11, p11 = read_output_csv(run_dir)
@@ -135,6 +167,15 @@ def load_run(run_dir):
     # the file the stresses came from -- wins.
     if len(loads) == len(f11):
         f11 = 1.0 + np.asarray(loads)
+
+    # The true stress needs the whole tensor, and J is a small number built from
+    # the CSV's 3-digit lateral stretches, so sigma11 carries their precision.
+    f_tensor, p_tensor = read_output_tensors(run_dir)
+    if f_tensor is not None and len(f_tensor) == len(f11):
+        f_tensor[:, 0, 0] = f11
+        sigma11 = cauchy_11(f_tensor, p_tensor)
+    else:
+        sigma11 = None
 
     meta = read_metadata(run_dir)
     matrix = meta.get("matrix")
@@ -150,6 +191,7 @@ def load_run(run_dir):
         "complete": status in FULLY_CONVERGED,
         "f11": f11,
         "p11": p11,
+        "sigma11": sigma11,
         "matrix": matrix,
         "filler": filler,
         "contrast": contrast,
@@ -186,6 +228,7 @@ def load_sweep(sweep_dir):
     runs = []
     for contrast_dir in contrast_dirs:
         parent = os.path.join(sweep_dir, contrast_dir)
+        group = []
         for name in sorted(os.listdir(parent)):
             run_dir = os.path.join(parent, name)
             if not os.path.isdir(run_dir) or parse_phr(name) is None:
@@ -194,12 +237,27 @@ def load_sweep(sweep_dir):
             if run is None:
                 print("skip (no output.csv): {}".format(os.path.join(contrast_dir, name)))
                 continue
-            if run["contrast"] is None:
-                run["contrast"] = _contrast_from_dirname(contrast_dir)
-            if run["contrast"] is None:
-                print("skip (no contrast): {}".format(os.path.join(contrast_dir, name)))
-                continue
             run["label"] = contrast_dir or os.path.basename(sweep_dir)
+            group.append(run)
+
+        # run_metadata.txt is written when a run finishes, so a run that was
+        # killed part way through has none and arrives here without a contrast
+        # or matrix phase. Its curve is still good, so it inherits what the rest
+        # of its folder agrees on rather than being thrown away.
+        for key in ("contrast", "matrix"):
+            known = {run[key] for run in group if run[key] is not None}
+            shared = known.pop() if len(known) == 1 else None
+            if key == "contrast" and shared is None:
+                shared = _contrast_from_dirname(contrast_dir)
+            for run in group:
+                if run[key] is None:
+                    run[key] = shared
+
+        for run in group:
+            if run["contrast"] is None:
+                print("skip (no contrast): {}".format(
+                    os.path.join(contrast_dir, os.path.basename(run["dir"]))))
+                continue
             runs.append(run)
 
     if not runs:
@@ -253,18 +311,29 @@ def matrix_p11(f11, model, young, poisson):
     return float(P[0, 0, 0])
 
 
-def p11_at_strain(run, strain):
-    """P11 interpolated at F11 = 1 + strain, or None if the run stopped earlier.
+def stress_at_strain(run, strain, key="p11"):
+    """run[key] interpolated at F11 = 1 + strain, or None if the run stopped earlier.
 
-    The undeformed state (F11 = 1, P11 = 0) is prepended so a target below the
-    first increment is interpolated rather than dropped.
+    `key` is "p11" for the nominal (first Piola-Kirchhoff) stress -- force per
+    undeformed area, the quantity an experimental tensile curve plots -- or
+    "sigma11" for the true (Cauchy) stress. The undeformed state
+    (F11 = 1, stress = 0) is prepended so a target below the first increment is
+    interpolated rather than dropped.
     """
+    stress = run.get(key)
+    if stress is None:
+        return None
     f11 = np.concatenate(([1.0], run["f11"]))
-    p11 = np.concatenate(([0.0], run["p11"]))
+    stress = np.concatenate(([0.0], stress))
     target = 1.0 + strain
     if target > f11[-1] + 1e-9:
         return None
-    return float(np.interp(target, f11, p11))
+    return float(np.interp(target, f11, stress))
+
+
+def p11_at_strain(run, strain):
+    """P11 interpolated at F11 = 1 + strain, or None if the run stopped earlier."""
+    return stress_at_strain(run, strain, "p11")
 
 
 def resolve_strain(runs, requested):
