@@ -11,7 +11,7 @@ if SCRIPT_DIR not in sys.path:
 from boolean_model_base import BooleanModelBase
 
 class BooleanSphereExclusionModel(BooleanModelBase):
-    def __init__(self, box_size=1.0, intensity=50, radius=0.15, seed=None):
+    def __init__(self, box_size=1.0, intensity=1, radius=0.15, seed=None):
         """
         Initialize Boolean Model of spherical exclusions.
         
@@ -50,8 +50,8 @@ def main():
     # Create Boolean model with specified parameters
     model1 = BooleanSphereExclusionModel(
         box_size=3.0,
-        intensity=1.75,  # Poisson point process intensity
-        radius=0.6,   # Sphere radius
+        intensity=1.8,  # Poisson point process intensity
+        radius=0.4,   # Sphere radius
         seed=42        # For reproducibility
     )
 

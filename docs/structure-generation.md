@@ -5,10 +5,10 @@ Use this file for detailed, durable notes about 3D structure generation, voxeliz
 ## Core Files
 
 - `microstructure_generation/combined_particle_models.py`: generates sphere structures and saves sphere/voxel NPZ outputs.
-- `microstructure_generation/cross_section_generator.py`: creates 2D cross-section images from particle meshes, voxel NPZ files, or sphere-parameter NPZ files.
+- `microstructure_generation/2D_generation/cross_section_generator.py`: creates 2D cross-section images from particle meshes, voxel NPZ files, or sphere-parameter NPZ files.
 - `microstructure_generation/calculate_phr.py`: calculates 3D PHR for voxel or sphere NPZ files.
-- `microstructure_generation/create_2d_testset_images_by_phr.py`: batch-generates 2D slice images from TestSet 3D sphere structures, calculates each slice's own 2D PHR, and prefixes filenames by PHR.
-- `microstructure_generation/smooth_2d_occlusions.py`: fills small black polymer components fully enclosed by white filler in 2D masks and writes a manifest of area changes.
+- `microstructure_generation/2D_generation/create_2d_testset_images_by_phr.py`: batch-generates 2D slice images from TestSet 3D sphere structures, calculates each slice's own 2D PHR, and prefixes filenames by PHR.
+- `microstructure_generation/2D_generation/smooth_2d_occlusions.py`: fills small black polymer components fully enclosed by white filler in 2D masks and writes a manifest of area changes.
 
 ## Path Behavior
 
@@ -71,7 +71,7 @@ Structures/2D_test_set_occlusion_smoothed
 It was produced with:
 
 ```text
-python -B microstructure_generation/smooth_2d_occlusions.py --input-dir Structures/2D_test_set_smoothed --output-dir Structures/2D_test_set_occlusion_smoothed --manifest Structures/2D_test_set_occlusion_smoothed/occlusion_smoothing_manifest.csv --max-hole-area 512
+python -B microstructure_generation/2D_generation/smooth_2d_occlusions.py --input-dir Structures/2D_test_set_smoothed --output-dir Structures/2D_test_set_occlusion_smoothed --manifest Structures/2D_test_set_occlusion_smoothed/occlusion_smoothing_manifest.csv --max-hole-area 512
 ```
 
 That pass filled 12 enclosed polymer pockets totaling 433 pixels across `023.00phr.png`, `029.00phr.png`, `037.00phr.png`, `040.00phr.png`, and `046.00phr.png`; validation found zero enclosed polymer pockets remaining in the output folder.

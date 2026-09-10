@@ -1,0 +1,62 @@
+{
+ "status": "in_progress",
+ "tol_rel": 1e-05,
+ "tol_abs": 1e-10,
+ "max_gmres_iter": 2000,
+ "preconditioner": "reference",
+ "discretization": "fourier",
+ "precond_restrict": true,
+ "reference": "matrix",
+ "forcing": "eisenstat_walker",
+ "inner_rtol": null,
+ "eta_min": 0.001,
+ "eta_max": 0.01,
+ "step_cuts": 0,
+ "increments": [
+  {
+   "newton_iterations": 5,
+   "krylov_iterations": [
+    235,
+    51,
+    48,
+    46,
+    85
+   ],
+   "forcing_terms": [
+    0.01,
+    0.007919740564879893,
+    0.01,
+    0.01,
+    0.0011279665314702372
+   ],
+   "alphas": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "residual_F": [
+    5956.253111772338,
+    565.8022059830399,
+    106.32516545306852,
+    15.591680885838054,
+    0.5110265194142806,
+    0.0026869672620300597
+   ],
+   "residual_p": [
+    50.00469977912127,
+    4.630704677374848,
+    0.8870036508804112,
+    0.10527018749714342,
+    0.004117860086693457,
+    1.7379555644628406e-05
+   ],
+   "fail_reason": null,
+   "step": 0.1,
+   "load_start": 0.0,
+   "converged": true,
+   "time_seconds": 8253.83972287178
+  }
+ ]
+}

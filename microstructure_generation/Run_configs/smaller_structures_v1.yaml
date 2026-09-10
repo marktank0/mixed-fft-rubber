@@ -1,0 +1,123 @@
+# =============================================================================
+# Microstructure generation config  (schema version 1)
+#
+# Standalone config for combined_particle_models.py. Generates many 3D filler
+# structures from one file instead of editing the DEFAULT_* block by hand.
+# Run with:  python generate_structures.py generation_phr_sweep.yaml
+#
+# NOTE ON PHR: PHR is an *output*, not an input. It is computed from the filler
+# volume fraction AFTER voxelization (see calculate_phr.py). You steer it
+# indirectly, mainly via model1.intensity (more candidate spheres -> more
+# filler -> higher PHR). This config records the resulting PHR of every
+# structure in the manifest so you can bin/select by PHR afterward.
+# =============================================================================
+
+version: 1
+
+# Output folder, relative to the repository root (or an absolute path).
+output_dir: microstructure_generation/3D_samples/smaller_structures_v2
+
+# -----------------------------------------------------------------------------
+# defaults: baseline parameters for EVERY structure. A sweep axis or an explicit
+# case only overrides the fields it names; everything else is inherited here.
+# -----------------------------------------------------------------------------
+defaults:
+  box_size: 3.0
+
+  model1:                       # small candidate filler spheres
+    intensity: 230.0            
+    radius: 0.10
+  model2:                       # spheroidal region where filler is ALLOWED
+    intensity: 2
+    min_r1: 0.25
+    max_r1: 0.5
+  model3:                       # spheres that CARVE filler back out
+    intensity: 1.8
+    radius: 0.4
+
+  voxel_grid: [31, 31, 31]      # (Nx, Ny, Nz) for the voxel export
+
+  outputs:
+    save_spheres_npz: false      # compact centers+radii representation
+    save_voxel_npz:   true      # solver-ready voxel phase tensor
+    save_particle_vtp: false    # per-particle meshes (large; usually off)
+    save_union_vtp:    false
+
+  cleanup:                      # realism filters, applied before saving / PHR
+    remove_floating_clusters: true
+    min_cluster_size: 4         #   drop groups of fewer than N touching spheres
+    closing_radius: 1           #   seal matrix channels up to ~2*r voxels wide (0 = off)
+    fill_occlusions: true
+    max_occlusion_voxels: 4     #   fill enclosed matrix pockets up to this size
+    periodic: true              #   match the FFT solver's periodic domain
+
+  visualize: false              # forced off for batch generation
+  notes: ""                     # free-text metadata stored in the npz files
+
+# -----------------------------------------------------------------------------
+# phr: record-only. For each structure the runner computes filler fraction and
+# PHR and writes them to the manifest.
+# -----------------------------------------------------------------------------
+phr:
+  filler_density: 1.8
+  rubber_density: 0.92
+
+# -----------------------------------------------------------------------------
+# execution: how the batch is run.
+# -----------------------------------------------------------------------------
+execution:
+  max_workers: 6                # parallel structures
+  on_existing: skip             # skip | overwrite | error
+  save_manifest: true           # manifest.csv: filename -> params + phr
+
+run:
+  mode: sweep                   # sweep | cases
+
+# -----------------------------------------------------------------------------
+# SWEEP mode: cartesian product of the axes, generated `replicates` times each.
+#   - axis value that is a MAPPING {start, stop, step} -> inclusive range
+#   - axis value that is a LIST                        -> those exact values
+# Below: 10 intensities x replicates 10 = 100 structures.
+#
+# seed.strategy:
+#   sequential -> structure k (0-based, across the whole run) uses start_seed + k
+#   fixed      -> every structure uses start_seed
+#   random     -> a fresh random seed per structure (recorded in the manifest)
+#
+# naming.template placeholders:
+#   {phr}     the actual PHR of the structure, rounded to 2 decimals (computed
+#             from the voxelized filler fraction and the densities above)
+#   {value}   value of the first sweep axis (handy for single-axis sweeps)
+#   {sample}  1-based replicate index within a sweep point
+#   {index}   1-based global running index across the whole run
+#   {seed}    the seed used for that structure
+#   {<axis>}  any axis, dots replaced by underscores, e.g. {model1_intensity}
+# {phr} is only known after generation, so the rest of the name must already be
+# unique on its own (add {index}, or {value}+{sample} as below).
+# -----------------------------------------------------------------------------
+sweep:
+  axes:
+    # model1.intensity: { start: 200, stop: 240, step: 20 }
+    # other things you could sweep, together or instead:
+    model2.intensity: { start: 2.0, stop: 4.0, step: 0.5 }
+    #model2.max_r1: [0.5, 0.6, 0.7, 0.8]
+    # model1.radius: { start: 0.12, stop: 0.18, step: 0.02 }
+    # model3.radius: { start: 0.4, stop: 0.6, step: 0.2}
+  replicates: 20            # number of structures per sweep point
+  seed:
+    strategy: sequential    # sequential | random | fixed
+    start_seed: 1000
+  naming:
+    template: "phr_{phr}_id{index}"
+
+# -----------------------------------------------------------------------------
+# CASES mode (used when run.mode: cases): explicit one-off structures.
+# Same override semantics as sweep axes. Each may set its own name/seed.
+# -----------------------------------------------------------------------------
+cases:
+  - name: hand_tuned_low_phr
+    seed: 7
+    model1: { intensity: 90 }
+  - name: hand_tuned_high_phr
+    seed: 8
+    model1: { intensity: 240 }

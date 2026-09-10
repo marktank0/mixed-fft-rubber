@@ -1,0 +1,23 @@
+{
+ "structure": "1_voxel",
+ "contrast": 2500,
+ "config": "FIX+C5+Willot",
+ "family": "corrected",
+ "N": 31,
+ "increments": 3,
+ "cap_hit": true,
+ "status": "failed",
+ "krylov_total": 117376,
+ "krylov_max_per_solve": 20000,
+ "newton_total": 28,
+ "step_cuts": 5,
+ "solver_seconds": 9711.448293685913,
+ "P11": null,
+ "P11_curve": [],
+ "F11": null,
+ "incompatible": 1.7251835296803824e-11,
+ "filler_strain": 0.06479071404798048,
+ "F11_min": 0.9251257681978411,
+ "F11_max": 1.4558212250565141,
+ "wall_seconds": 9712.284680843353
+}

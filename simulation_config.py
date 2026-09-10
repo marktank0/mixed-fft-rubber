@@ -7,6 +7,8 @@ import glob
 import json
 import os
 
+from project_paths import PROJECT_ROOT
+
 try:
     import yaml
 except ModuleNotFoundError:
@@ -66,12 +68,26 @@ def apply_thread_env(config):
 
 
 def resolve_base_path(config, base_path_override=None):
-    """Resolve the run base path from CLI override or YAML."""
-    raw_base_path = base_path_override
-    if raw_base_path is None:
-        raw_base_path = config.get("base_path", ".")
-    raw_base_path = os.path.expanduser(os.path.expandvars(str(raw_base_path)))
-    return os.path.abspath(raw_base_path)
+    """Resolve the run base path from CLI override or YAML.
+
+    A relative ``base_path`` in the YAML is resolved against the repository
+    root, not the working directory: the configs live in
+    FFT_simulation/Run_configs/ but their structure, charge and output paths
+    are written relative to the repository root, and a run must resolve to the
+    same files whether it was started from the root, from FFT_simulation/ or
+    from a server job directory.
+
+    A ``--base-path`` given on the command line is resolved against the working
+    directory instead, which is what a human typing a path expects.
+    """
+    if base_path_override is not None:
+        raw_base_path = os.path.expanduser(os.path.expandvars(str(base_path_override)))
+        return os.path.abspath(raw_base_path)
+
+    raw_base_path = os.path.expanduser(os.path.expandvars(str(config.get("base_path", "."))))
+    if os.path.isabs(raw_base_path):
+        return os.path.normpath(raw_base_path)
+    return os.path.normpath(os.path.join(PROJECT_ROOT, raw_base_path))
 
 
 def resolve_path(path, base_path):
@@ -265,13 +281,19 @@ def _normalize_case(config, raw_case, base_path, execution):
         "output_path": resolve_path(output_root, base_path),
         "N": int(solver.get("N", 31)),
         "incre_list": _normalize_increments(solver.get("increments", solver.get("incre_list", [0.1]*10))),
-        "preconditioner": solver.get("preconditioner", "reference"),
+        "preconditioner": solver.get("preconditioner", "green"),
         "diagnostics": bool(solver.get("diagnostics", False)),
-        "savemodel": solver.get("savemodel", "normal"),
         "max_gmres_iter": int(solver.get("max_gmres_iter", 1000)),
         "min_substep_ratio": float(solver.get("min_substep_ratio", 1.0/16.0)),
         "tol_rel": float(solver.get("tol_rel", 1.e-5)),
         "gmres_restart": solver.get("gmres_restart"),
+        "reference": solver.get("reference", "mean"),
+        "discretization": solver.get("discretization", "fourier"),
+        "precond_restrict": bool(solver.get("precond_restrict", True)),
+        "forcing": solver.get("forcing", "eisenstat_walker"),
+        "inner_rtol": float(solver.get("inner_rtol", 1.e-6)),
+        "eta_max": float(solver.get("eta_max", 1.e-2)),
+        "eta_min": float(solver.get("eta_min", 1.e-3)),
         "matrix_phase": int(phases.get("matrix_phase", 0)),
         "filler_phase": int(phases.get("filler_phase", 1)),
         "phase_key": phases.get("phase_key", "phase"),

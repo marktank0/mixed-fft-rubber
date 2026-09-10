@@ -1,6 +1,6 @@
 # Incompressible Mooney-Rivlin UMAT Plan
 
-This note derives the incompressible Mooney-Rivlin model in the exact form needed by `fg/constitutive_incompressible/2.py`.
+This note derives the incompressible Mooney-Rivlin model in the exact form needed by `FFT_simulation/fg/constitutive_incompressible/2.py`.
 
 The current mixed FFT solver expects each incompressible constitutive file to expose:
 

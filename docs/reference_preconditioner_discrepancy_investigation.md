@@ -11,7 +11,7 @@ Observed result from the larger traction-style run:
 
 ## Current Solver Modes
 
-In `fg/mxfft.py`, the current mixed solver has three relevant modes:
+In `FFT_simulation/fg/mxfft.py`, the current mixed solver has three relevant modes:
 
 $$
 \texttt{none}: \quad A \Delta x = b \quad \text{solved by CG}

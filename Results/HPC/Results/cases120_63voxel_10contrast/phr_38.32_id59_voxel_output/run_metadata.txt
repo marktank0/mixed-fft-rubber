@@ -1,0 +1,33 @@
+Created: 2026-08-31T09:57:07
+Run time seconds: 131747.550
+
+Input files
+-----------
+Structure path: /home/s2850680/mixed-fft-master/microstructure_generation/3D_samples/improved_struct_v4/voxel_structures/phr_38.32_id59_voxel.npz
+Charge path: /home/s2850680/mixed-fft-master/FFT_simulation/Run_configs/Charges/Neo_1.0_E10-100.txt
+
+Material phases
+---------------
+Phase 0 (matrix): model 1, E 10.0, poisson 0.48
+Phase 1 (filler): model 1, E 100.0, poisson 0.3
+
+Structure statistics
+--------------------
+Filler phase: 1
+Filler voxels: 40950
+Total voxels: 250047
+Filler volume fraction: 0.163769
+
+Solver settings
+---------------
+Grid N: 63
+Increments: [0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025]
+Preconditioner: reference
+Diagnostics: True
+Solver status: failed
+
+Charge
+------
+dF: [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Control type: [F11 controlled, F12 controlled, F13 controlled, F21 controlled, P22 controlled, F23 controlled, F31 controlled, F32 controlled, P33 controlled]
+

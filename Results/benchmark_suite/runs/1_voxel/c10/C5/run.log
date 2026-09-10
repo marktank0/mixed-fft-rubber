@@ -1,0 +1,56 @@
+---------------------------------------------
+-- mixed FFT based solver, by WANG Mingchuan
+---------------------------------------------
+gmres restart length: 100
+Ghat4 is formed (fourier discretization)...
+this increment is 0.1 (target 0.1) ------------------------
+res 4.224e-02 (F-block 6.712e-02 p-block 1.360e-02) alpha 1 eta 1.00e-02 iter times 9
+gmres iter 10 linear residual 2.255e-04
+res 2.079e-03 (F-block 2.916e-04 p-block 1.158e-04) alpha 1 eta 2.11e-03 iter times 11
+gmres iter 10 linear residual 3.440e-04
+res 2.610e-05 (F-block 7.158e-08 p-block 4.200e-08) alpha 1 eta 1.00e-03 iter times 16
+time this step...13.948105335235596
+now P is...
+[[ 1.04096053e+00  1.51194496e-04 -7.88002689e-04]
+ [ 1.51044348e-04 -4.29703836e-09  3.32290799e-03]
+ [-7.86146074e-04  3.32328342e-03 -1.67350898e-09]]
+now F is...
+[[ 1.10000000e+00  9.68943595e-20  1.41614833e-19]
+ [-2.23602368e-20  9.56065504e-01  2.29192427e-19]
+ [ 2.98136491e-20  2.79502960e-20  9.55999961e-01]]
+intermediate results saved (1 increments in output.csv)
+this increment is 0.1 (target 0.2) ------------------------
+res 3.812e-02 (F-block 7.118e-02 p-block 1.259e-02) alpha 1 eta 1.00e-02 iter times 9
+gmres iter 10 linear residual 3.548e-04
+res 2.312e-03 (F-block 2.954e-04 p-block 1.592e-04) alpha 1 eta 2.35e-03 iter times 13
+gmres iter 10 linear residual 7.219e-04
+res 2.462e-05 (F-block 7.467e-08 p-block 4.594e-08) alpha 1 eta 1.00e-03 iter times 17
+time this step...14.840944528579712
+now P is...
+[[ 1.90910183e+00  1.74215361e-04 -1.49258724e-03]
+ [ 1.73640554e-04 -3.77729121e-09  6.30288278e-03]
+ [-1.47803407e-03  6.30461376e-03 -3.28773473e-09]]
+now F is...
+[[ 1.20000000e+00 -7.45341227e-20  1.71428482e-19]
+ [-2.38509193e-19  9.18530502e-01  2.49689311e-19]
+ [-2.75776254e-19 -1.66770100e-19  9.18388951e-01]]
+intermediate results saved (2 increments in output.csv)
+this increment is 0.1 (target 0.30000000000000004) ------------------------
+res 3.487e-02 (F-block 7.474e-02 p-block 1.202e-02) alpha 1 eta 1.00e-02 iter times 9
+gmres iter 10 linear residual 5.188e-04
+res 2.472e-03 (F-block 3.430e-04 p-block 1.993e-04) alpha 1 eta 2.58e-03 iter times 13
+gmres iter 10 linear residual 1.113e-03
+res 2.897e-05 (F-block 8.517e-08 p-block 9.392e-08) alpha 1 eta 1.00e-03 iter times 18
+time this step...15.068925857543945
+now P is...
+[[ 2.65950146e+00  1.06541441e-04 -2.09777600e-03]
+ [ 1.07819399e-04 -1.57732779e-08  9.12736982e-03]
+ [-2.05585369e-03  9.13162664e-03 -1.69889240e-08]]
+now F is...
+[[ 1.30000000e+00 -1.19254596e-19  1.49068245e-20]
+ [-5.36645683e-19  8.86125644e-01  1.90062013e-19]
+ [-1.78881894e-19 -2.83229666e-19  8.85914634e-01]]
+intermediate results saved (3 increments in output.csv)
+finish!
+solver stats are saved to solver_stats.json
+F and P are saved to output.csv

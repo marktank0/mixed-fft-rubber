@@ -1,0 +1,432 @@
+---------------------------------------------
+-- mixed FFT based solver, by WANG Mingchuan
+---------------------------------------------
+gmres restart length: 100
+Ghat4 is formed (fourier discretization)...
+this increment is 0.1 (target 0.1) ------------------------
+gmres iter 10 linear residual 9.640e-03
+gmres iter 20 linear residual 8.850e-03
+gmres iter 30 linear residual 4.569e-03
+gmres iter 40 linear residual 2.419e-03
+gmres iter 50 linear residual 1.544e-03
+gmres iter 60 linear residual 1.116e-03
+gmres iter 70 linear residual 8.393e-04
+res 1.027e-01 (F-block 8.740e-01 p-block 7.771e-01) alpha 0.125 eta 1.00e-02 iter times 77
+gmres iter 10 linear residual 6.273e-03
+gmres iter 20 linear residual 5.676e-03
+gmres iter 30 linear residual 2.991e-03
+gmres iter 40 linear residual 2.100e-03
+gmres iter 50 linear residual 1.588e-03
+gmres iter 60 linear residual 1.261e-03
+gmres iter 70 linear residual 1.020e-03
+gmres iter 80 linear residual 8.313e-04
+gmres iter 90 linear residual 6.664e-04
+res 1.177e-01 (F-block 6.524e-01 p-block 7.115e-01) alpha 0.25 eta 1.00e-02 iter times 92
+gmres iter 10 linear residual 1.419e-03
+gmres iter 20 linear residual 8.375e-04
+gmres iter 30 linear residual 6.798e-04
+gmres iter 40 linear residual 5.257e-04
+res 4.065e-02 (F-block 2.673e-02 p-block 5.806e-01) alpha 1 eta 1.00e-02 iter times 41
+gmres iter 10 linear residual 1.350e-01
+gmres iter 20 linear residual 5.494e-02
+gmres iter 30 linear residual 3.338e-02
+gmres iter 40 linear residual 2.324e-02
+gmres iter 50 linear residual 1.566e-02
+gmres iter 60 linear residual 1.145e-02
+gmres iter 70 linear residual 8.856e-03
+gmres iter 80 linear residual 7.083e-03
+gmres iter 90 linear residual 6.046e-03
+gmres iter 100 linear residual 5.201e-03
+gmres iter 110 linear residual 4.844e-03
+gmres iter 120 linear residual 4.530e-03
+gmres iter 130 linear residual 4.320e-03
+gmres iter 140 linear residual 4.055e-03
+gmres iter 150 linear residual 3.337e-03
+gmres iter 160 linear residual 2.144e-03
+res 1.787e-01 (F-block 6.247e-03 p-block 5.517e-01) alpha 1 eta 1.00e-02 iter times 169
+gmres iter 10 linear residual 2.027e-01
+gmres iter 20 linear residual 9.376e-02
+gmres iter 30 linear residual 4.001e-02
+gmres iter 40 linear residual 2.826e-02
+gmres iter 50 linear residual 2.274e-02
+gmres iter 60 linear residual 1.757e-02
+gmres iter 70 linear residual 1.333e-02
+gmres iter 80 linear residual 1.082e-02
+gmres iter 90 linear residual 8.740e-03
+gmres iter 100 linear residual 6.914e-03
+gmres iter 110 linear residual 6.080e-03
+gmres iter 120 linear residual 5.301e-03
+gmres iter 130 linear residual 4.494e-03
+gmres iter 140 linear residual 3.563e-03
+gmres iter 150 linear residual 2.826e-03
+gmres iter 160 linear residual 2.320e-03
+res 8.046e-02 (F-block 8.295e-04 p-block 1.759e-01) alpha 1 eta 1.00e-02 iter times 168
+gmres iter 10 linear residual 2.423e-01
+gmres iter 20 linear residual 1.256e-01
+gmres iter 30 linear residual 4.067e-02
+gmres iter 40 linear residual 2.172e-02
+gmres iter 50 linear residual 1.571e-02
+gmres iter 60 linear residual 1.291e-02
+gmres iter 70 linear residual 1.010e-02
+gmres iter 80 linear residual 7.049e-03
+gmres iter 90 linear residual 4.924e-03
+gmres iter 100 linear residual 3.174e-03
+gmres iter 110 linear residual 2.451e-03
+res 1.797e-02 (F-block 5.722e-05 p-block 9.427e-03) alpha 1 eta 1.00e-02 iter times 117
+gmres iter 10 linear residual 1.929e-01
+gmres iter 20 linear residual 1.387e-01
+gmres iter 30 linear residual 5.685e-02
+gmres iter 40 linear residual 3.211e-02
+gmres iter 50 linear residual 1.945e-02
+gmres iter 60 linear residual 1.123e-02
+gmres iter 70 linear residual 6.990e-03
+gmres iter 80 linear residual 5.188e-03
+gmres iter 90 linear residual 4.328e-03
+gmres iter 100 linear residual 3.394e-03
+gmres iter 110 linear residual 2.917e-03
+gmres iter 120 linear residual 2.482e-03
+gmres iter 130 linear residual 1.921e-03
+gmres iter 140 linear residual 1.285e-03
+gmres iter 150 linear residual 8.147e-04
+res 1.266e-03 (F-block 1.094e-06 p-block 3.014e-04) alpha 1 eta 2.58e-03 iter times 159
+gmres iter 10 linear residual 1.478e-01
+gmres iter 20 linear residual 1.192e-01
+gmres iter 30 linear residual 6.187e-02
+gmres iter 40 linear residual 3.850e-02
+gmres iter 50 linear residual 2.310e-02
+gmres iter 60 linear residual 1.381e-02
+gmres iter 70 linear residual 7.696e-03
+gmres iter 80 linear residual 5.114e-03
+gmres iter 90 linear residual 4.169e-03
+gmres iter 100 linear residual 3.521e-03
+gmres iter 110 linear residual 3.121e-03
+gmres iter 120 linear residual 2.624e-03
+gmres iter 130 linear residual 1.897e-03
+gmres iter 140 linear residual 1.124e-03
+gmres iter 150 linear residual 6.864e-04
+gmres iter 160 linear residual 4.323e-04
+gmres iter 170 linear residual 2.800e-04
+res 2.266e-05 (F-block 1.582e-09 p-block 3.540e-07) alpha 1 eta 1.00e-03 iter times 177
+time this step...263.40654373168945
+now P is...
+[[ 1.09007584e+00  5.79663055e-04 -4.42169784e-04]
+ [ 6.50372851e-04 -9.10643405e-09  8.10413679e-03]
+ [-3.61650981e-04  8.07204961e-03 -6.62404508e-09]]
+now F is...
+[[ 1.10000000e+00 -1.25202419e-15  2.66891787e-16]
+ [-9.72282724e-16  9.56274310e-01  3.40158829e-16]
+ [ 1.23383787e-15  2.41096458e-16  9.56064388e-01]]
+intermediate results saved (1 increments in output.csv)
+this increment is 0.1 (target 0.2) ------------------------
+gmres iter 10 linear residual 1.035e-02
+gmres iter 20 linear residual 9.622e-03
+gmres iter 30 linear residual 5.462e-03
+gmres iter 40 linear residual 2.792e-03
+gmres iter 50 linear residual 2.168e-03
+gmres iter 60 linear residual 1.572e-03
+gmres iter 70 linear residual 1.161e-03
+gmres iter 80 linear residual 8.466e-04
+res 1.030e-01 (F-block 8.740e-01 p-block 7.744e-01) alpha 0.125 eta 1.00e-02 iter times 85
+gmres iter 10 linear residual 6.745e-03
+gmres iter 20 linear residual 6.203e-03
+gmres iter 30 linear residual 3.410e-03
+gmres iter 40 linear residual 2.226e-03
+gmres iter 50 linear residual 1.650e-03
+gmres iter 60 linear residual 1.317e-03
+gmres iter 70 linear residual 1.052e-03
+gmres iter 80 linear residual 8.048e-04
+res 1.092e-01 (F-block 6.524e-01 p-block 7.539e-01) alpha 0.25 eta 1.00e-02 iter times 87
+gmres iter 10 linear residual 1.671e-03
+gmres iter 20 linear residual 9.851e-04
+gmres iter 30 linear residual 8.241e-04
+gmres iter 40 linear residual 6.355e-04
+res 4.652e-02 (F-block 2.788e-02 p-block 7.259e-01) alpha 1 eta 1.00e-02 iter times 43
+gmres iter 10 linear residual 1.386e-01
+gmres iter 20 linear residual 5.900e-02
+gmres iter 30 linear residual 3.556e-02
+gmres iter 40 linear residual 2.534e-02
+gmres iter 50 linear residual 1.698e-02
+gmres iter 60 linear residual 1.231e-02
+gmres iter 70 linear residual 9.362e-03
+gmres iter 80 linear residual 7.315e-03
+gmres iter 90 linear residual 6.082e-03
+gmres iter 100 linear residual 5.250e-03
+gmres iter 110 linear residual 4.902e-03
+gmres iter 120 linear residual 4.570e-03
+gmres iter 130 linear residual 4.359e-03
+gmres iter 140 linear residual 4.126e-03
+gmres iter 150 linear residual 3.619e-03
+gmres iter 160 linear residual 2.715e-03
+gmres iter 170 linear residual 2.047e-03
+gmres iter 180 linear residual 1.509e-03
+res 1.705e-01 (F-block 5.652e-03 p-block 5.737e-01) alpha 1 eta 1.00e-02 iter times 181
+gmres iter 10 linear residual 2.290e-01
+gmres iter 20 linear residual 1.190e-01
+gmres iter 30 linear residual 5.334e-02
+gmres iter 40 linear residual 3.823e-02
+gmres iter 50 linear residual 3.146e-02
+gmres iter 60 linear residual 2.528e-02
+gmres iter 70 linear residual 1.957e-02
+gmres iter 80 linear residual 1.614e-02
+gmres iter 90 linear residual 1.352e-02
+gmres iter 100 linear residual 1.123e-02
+gmres iter 110 linear residual 1.012e-02
+gmres iter 120 linear residual 8.956e-03
+gmres iter 130 linear residual 7.820e-03
+gmres iter 140 linear residual 6.425e-03
+gmres iter 150 linear residual 5.213e-03
+gmres iter 160 linear residual 4.319e-03
+gmres iter 170 linear residual 3.349e-03
+gmres iter 180 linear residual 2.217e-03
+res 8.640e-02 (F-block 1.084e-03 p-block 2.527e-01) alpha 1 eta 1.00e-02 iter times 185
+gmres iter 10 linear residual 2.271e-01
+gmres iter 20 linear residual 1.396e-01
+gmres iter 30 linear residual 5.627e-02
+gmres iter 40 linear residual 3.040e-02
+gmres iter 50 linear residual 2.186e-02
+gmres iter 60 linear residual 1.827e-02
+gmres iter 70 linear residual 1.499e-02
+gmres iter 80 linear residual 1.116e-02
+gmres iter 90 linear residual 7.815e-03
+gmres iter 100 linear residual 5.681e-03
+gmres iter 110 linear residual 4.661e-03
+gmres iter 120 linear residual 3.661e-03
+gmres iter 130 linear residual 2.990e-03
+gmres iter 140 linear residual 2.533e-03
+res 2.065e-02 (F-block 1.367e-04 p-block 1.345e-02) alpha 1 eta 1.00e-02 iter times 148
+gmres iter 10 linear residual 1.230e-01
+gmres iter 20 linear residual 1.013e-01
+gmres iter 30 linear residual 4.995e-02
+gmres iter 40 linear residual 2.199e-02
+gmres iter 50 linear residual 1.350e-02
+gmres iter 60 linear residual 1.017e-02
+gmres iter 70 linear residual 7.555e-03
+gmres iter 80 linear residual 6.238e-03
+gmres iter 90 linear residual 5.168e-03
+gmres iter 100 linear residual 4.037e-03
+gmres iter 110 linear residual 3.395e-03
+gmres iter 120 linear residual 2.817e-03
+gmres iter 130 linear residual 2.331e-03
+gmres iter 140 linear residual 1.837e-03
+gmres iter 150 linear residual 1.401e-03
+gmres iter 160 linear residual 9.743e-04
+gmres iter 170 linear residual 6.043e-04
+res 1.848e-03 (F-block 3.976e-06 p-block 6.226e-04) alpha 1 eta 2.55e-03 iter times 174
+gmres iter 10 linear residual 7.753e-02
+gmres iter 20 linear residual 6.568e-02
+gmres iter 30 linear residual 3.951e-02
+gmres iter 40 linear residual 2.242e-02
+gmres iter 50 linear residual 1.306e-02
+gmres iter 60 linear residual 9.678e-03
+gmres iter 70 linear residual 7.257e-03
+gmres iter 80 linear residual 5.904e-03
+gmres iter 90 linear residual 4.835e-03
+gmres iter 100 linear residual 3.938e-03
+gmres iter 110 linear residual 3.450e-03
+gmres iter 120 linear residual 2.834e-03
+gmres iter 130 linear residual 2.306e-03
+gmres iter 140 linear residual 1.809e-03
+gmres iter 150 linear residual 1.344e-03
+gmres iter 160 linear residual 9.005e-04
+gmres iter 170 linear residual 5.777e-04
+gmres iter 180 linear residual 3.859e-04
+gmres iter 190 linear residual 3.329e-04
+gmres iter 200 linear residual 2.830e-04
+gmres iter 210 linear residual 2.298e-04
+gmres iter 220 linear residual 1.739e-04
+gmres iter 230 linear residual 1.273e-04
+res 3.922e-05 (F-block 4.911e-09 p-block 8.113e-07) alpha 1 eta 1.93e-03 iter times 238
+time this step...206.3650243282318
+now P is...
+[[ 1.99358429e+00  1.13097183e-03 -6.35634131e-04]
+ [ 1.31937981e-03 -2.05406072e-08  1.52400071e-02]
+ [-3.21637710e-04  1.51404412e-02 -2.61075048e-08]]
+now F is...
+[[ 1.20000000e+00  3.86056942e-16  1.17740063e-15]
+ [-2.25099013e-15  9.19347747e-01  3.51324041e-16]
+ [ 1.59664016e-15  3.65794841e-16  9.18770202e-01]]
+intermediate results saved (2 increments in output.csv)
+this increment is 0.1 (target 0.30000000000000004) ------------------------
+gmres iter 10 linear residual 1.085e-02
+gmres iter 20 linear residual 1.021e-02
+gmres iter 30 linear residual 6.475e-03
+gmres iter 40 linear residual 3.729e-03
+gmres iter 50 linear residual 2.887e-03
+gmres iter 60 linear residual 2.231e-03
+gmres iter 70 linear residual 1.486e-03
+gmres iter 80 linear residual 1.166e-03
+gmres iter 90 linear residual 9.272e-04
+res 1.029e-01 (F-block 8.741e-01 p-block 7.753e-01) alpha 0.125 eta 1.00e-02 iter times 99
+gmres iter 10 linear residual 7.061e-03
+gmres iter 20 linear residual 6.558e-03
+gmres iter 30 linear residual 3.854e-03
+gmres iter 40 linear residual 2.410e-03
+gmres iter 50 linear residual 1.842e-03
+gmres iter 60 linear residual 1.488e-03
+gmres iter 70 linear residual 1.226e-03
+gmres iter 80 linear residual 9.458e-04
+gmres iter 90 linear residual 7.499e-04
+res 1.083e-01 (F-block 6.525e-01 p-block 7.932e-01) alpha 0.25 eta 1.00e-02 iter times 93
+gmres iter 10 linear residual 1.968e-03
+gmres iter 20 linear residual 1.088e-03
+gmres iter 30 linear residual 9.249e-04
+gmres iter 40 linear residual 7.234e-04
+gmres iter 50 linear residual 6.243e-04
+res 6.505e-02 (F-block 3.213e-02 p-block 8.204e-01) alpha 1 eta 1.00e-02 iter times 59
+gmres iter 10 linear residual 1.257e-01
+gmres iter 20 linear residual 5.455e-02
+gmres iter 30 linear residual 3.316e-02
+gmres iter 40 linear residual 2.366e-02
+gmres iter 50 linear residual 1.633e-02
+gmres iter 60 linear residual 1.197e-02
+gmres iter 70 linear residual 9.172e-03
+gmres iter 80 linear residual 7.270e-03
+gmres iter 90 linear residual 6.089e-03
+gmres iter 100 linear residual 5.287e-03
+gmres iter 110 linear residual 4.961e-03
+gmres iter 120 linear residual 4.693e-03
+gmres iter 130 linear residual 4.516e-03
+gmres iter 140 linear residual 4.325e-03
+gmres iter 150 linear residual 3.865e-03
+gmres iter 160 linear residual 3.059e-03
+gmres iter 170 linear residual 2.439e-03
+gmres iter 180 linear residual 1.834e-03
+res 1.746e-01 (F-block 6.365e-03 p-block 6.639e-01) alpha 1 eta 1.00e-02 iter times 189
+gmres iter 10 linear residual 2.261e-01
+gmres iter 20 linear residual 1.287e-01
+gmres iter 30 linear residual 6.524e-02
+gmres iter 40 linear residual 4.694e-02
+gmres iter 50 linear residual 3.692e-02
+gmres iter 60 linear residual 2.929e-02
+gmres iter 70 linear residual 2.424e-02
+gmres iter 80 linear residual 2.035e-02
+gmres iter 90 linear residual 1.674e-02
+gmres iter 100 linear residual 1.407e-02
+gmres iter 110 linear residual 1.306e-02
+gmres iter 120 linear residual 1.168e-02
+gmres iter 130 linear residual 1.016e-02
+gmres iter 140 linear residual 8.795e-03
+gmres iter 150 linear residual 7.481e-03
+gmres iter 160 linear residual 6.207e-03
+gmres iter 170 linear residual 4.788e-03
+gmres iter 180 linear residual 3.445e-03
+gmres iter 190 linear residual 2.713e-03
+gmres iter 200 linear residual 2.200e-03
+gmres iter 210 linear residual 1.984e-03
+res 9.454e-02 (F-block 1.758e-03 p-block 3.386e-01) alpha 1 eta 1.00e-02 iter times 211
+gmres iter 10 linear residual 1.844e-01
+gmres iter 20 linear residual 1.301e-01
+gmres iter 30 linear residual 6.056e-02
+gmres iter 40 linear residual 3.776e-02
+gmres iter 50 linear residual 2.928e-02
+gmres iter 60 linear residual 2.361e-02
+gmres iter 70 linear residual 1.792e-02
+gmres iter 80 linear residual 1.329e-02
+gmres iter 90 linear residual 1.056e-02
+gmres iter 100 linear residual 8.624e-03
+gmres iter 110 linear residual 7.677e-03
+gmres iter 120 linear residual 6.487e-03
+gmres iter 130 linear residual 5.152e-03
+gmres iter 140 linear residual 4.072e-03
+gmres iter 150 linear residual 3.277e-03
+gmres iter 160 linear residual 2.622e-03
+gmres iter 170 linear residual 2.018e-03
+gmres iter 180 linear residual 1.679e-03
+gmres iter 190 linear residual 1.438e-03
+gmres iter 200 linear residual 1.187e-03
+gmres iter 210 linear residual 9.791e-04
+gmres iter 220 linear residual 8.243e-04
+gmres iter 230 linear residual 7.122e-04
+gmres iter 240 linear residual 5.250e-04
+res 2.565e-02 (F-block 4.598e-04 p-block 2.922e-02) alpha 1 eta 1.00e-02 iter times 240
+gmres iter 10 linear residual 6.784e-02
+gmres iter 20 linear residual 6.006e-02
+gmres iter 30 linear residual 3.373e-02
+gmres iter 40 linear residual 1.771e-02
+gmres iter 50 linear residual 1.247e-02
+gmres iter 60 linear residual 1.047e-02
+gmres iter 70 linear residual 8.496e-03
+gmres iter 80 linear residual 6.176e-03
+gmres iter 90 linear residual 4.299e-03
+gmres iter 100 linear residual 3.004e-03
+gmres iter 110 linear residual 2.468e-03
+gmres iter 120 linear residual 1.977e-03
+gmres iter 130 linear residual 1.657e-03
+gmres iter 140 linear residual 1.426e-03
+gmres iter 150 linear residual 1.273e-03
+gmres iter 160 linear residual 1.113e-03
+gmres iter 170 linear residual 9.354e-04
+gmres iter 180 linear residual 7.688e-04
+gmres iter 190 linear residual 5.682e-04
+gmres iter 200 linear residual 3.314e-04
+res 3.114e-03 (F-block 2.458e-05 p-block 1.575e-03) alpha 1 eta 6.71e-03 iter times 200
+gmres iter 10 linear residual 5.679e-02
+gmres iter 20 linear residual 4.995e-02
+gmres iter 30 linear residual 2.713e-02
+gmres iter 40 linear residual 1.468e-02
+gmres iter 50 linear residual 1.040e-02
+gmres iter 60 linear residual 8.346e-03
+gmres iter 70 linear residual 6.823e-03
+gmres iter 80 linear residual 5.548e-03
+gmres iter 90 linear residual 4.420e-03
+gmres iter 100 linear residual 3.372e-03
+gmres iter 110 linear residual 2.802e-03
+gmres iter 120 linear residual 2.267e-03
+gmres iter 130 linear residual 1.880e-03
+gmres iter 140 linear residual 1.575e-03
+gmres iter 150 linear residual 1.321e-03
+gmres iter 160 linear residual 1.011e-03
+gmres iter 170 linear residual 7.070e-04
+gmres iter 180 linear residual 5.245e-04
+res 1.525e-04 (F-block 1.491e-07 p-block 2.414e-05) alpha 1 eta 2.61e-03 iter times 180
+gmres iter 10 linear residual 1.547e-01
+gmres iter 20 linear residual 1.213e-01
+gmres iter 30 linear residual 8.342e-02
+gmres iter 40 linear residual 5.527e-02
+gmres iter 50 linear residual 3.862e-02
+gmres iter 60 linear residual 2.832e-02
+gmres iter 70 linear residual 2.187e-02
+gmres iter 80 linear residual 1.864e-02
+gmres iter 90 linear residual 1.616e-02
+gmres iter 100 linear residual 1.260e-02
+gmres iter 110 linear residual 1.081e-02
+gmres iter 120 linear residual 9.380e-03
+gmres iter 130 linear residual 8.087e-03
+gmres iter 140 linear residual 6.634e-03
+gmres iter 150 linear residual 5.226e-03
+gmres iter 160 linear residual 4.077e-03
+gmres iter 170 linear residual 3.053e-03
+gmres iter 180 linear residual 2.334e-03
+gmres iter 190 linear residual 1.842e-03
+gmres iter 200 linear residual 1.508e-03
+gmres iter 210 linear residual 1.328e-03
+gmres iter 220 linear residual 1.105e-03
+gmres iter 230 linear residual 8.742e-04
+gmres iter 240 linear residual 6.379e-04
+gmres iter 250 linear residual 4.842e-04
+gmres iter 260 linear residual 3.689e-04
+gmres iter 270 linear residual 2.896e-04
+gmres iter 280 linear residual 2.457e-04
+gmres iter 290 linear residual 2.133e-04
+gmres iter 300 linear residual 1.854e-04
+gmres iter 310 linear residual 1.672e-04
+gmres iter 320 linear residual 1.481e-04
+gmres iter 330 linear residual 1.270e-04
+gmres iter 340 linear residual 9.916e-05
+gmres iter 350 linear residual 7.856e-05
+gmres iter 360 linear residual 6.004e-05
+gmres iter 370 linear residual 4.565e-05
+res 2.696e-06 (F-block 6.562e-11 p-block 1.487e-08) alpha 1 eta 1.00e-03 iter times 373
+time this step...221.9841170310974
+now P is...
+[[ 2.77627387e+00  1.69456859e-03 -1.47135747e-04]
+ [ 1.91797314e-03 -1.61568962e-10  2.22248070e-02]
+ [ 5.85737252e-04  2.20256647e-02 -1.61421117e-10]]
+now F is...
+[[ 1.30000000e+00 -8.11944919e-16  4.50543865e-16]
+ [-2.86407801e-15  8.87835153e-01  3.59314099e-16]
+ [ 1.13846400e-15  1.27505524e-16  8.86786688e-01]]
+intermediate results saved (3 increments in output.csv)
+finish!
+solver stats are saved to solver_stats.json
+F and P are saved to output.csv

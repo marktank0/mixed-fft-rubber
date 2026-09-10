@@ -36,7 +36,7 @@ it afterward.
 Run a config with the runner (from the repository root, using the project venv):
 
 ```powershell
-.venv\Scripts\python microstructure_generation\generate_structures.py microstructure_generation\generation_phr_sweep.yaml
+.venv\Scripts\python microstructure_generation\generate_structures.py microstructure_generation\Run_configs\generation_phr_sweep.yaml
 ```
 
 Useful flags:
@@ -47,7 +47,7 @@ Useful flags:
 
 ### The config file
 
-`generation_phr_sweep.yaml` is the annotated template. Key sections:
+`Run_configs/generation_phr_sweep.yaml` is the annotated template. Key sections:
 
 - **`output_dir`** — where structures are written (relative to the repo root, or
   absolute).
@@ -134,9 +134,11 @@ sub-folders.
 
 - `generate_structures.py` — YAML batch runner (parallel, writes the manifest).
 - `generation_config.py` — loads the YAML and expands it into per-structure specs.
-- `generation_phr_sweep.yaml` — annotated example / template config.
+- `Run_configs/` — the generation YAML configs; `generation_phr_sweep.yaml`
+  is the annotated example / template.
 - `combined_particle_models.py` — core generation pipeline and single-run CLI.
 - `calculate_phr.py` — PHR calculation from a saved `.npz`.
 - `boolean_sphere_models/` — the three Boolean models and their shared base.
-- `cross_section_generator.py` — utility to render 2D section images from a
-  saved structure.
+- `2D_generation/` — the 2D tooling: `cross_section_generator.py` (render 2D
+  section images from a saved structure),
+  `create_2d_testset_images_by_phr.py` and `smooth_2d_occlusions.py`.

@@ -1,0 +1,20 @@
+{
+ "structure": "1_voxel",
+ "contrast": 100,
+ "config": "baseline",
+ "family": "legacy",
+ "N": 31,
+ "increments": 1,
+ "status": "converged",
+ "krylov_total": 311,
+ "krylov_max_per_solve": 84,
+ "newton_total": 4,
+ "step_cuts": 0,
+ "solver_seconds": 34.486433029174805,
+ "P11": 1.0835629743426431,
+ "P11_curve": [
+  1.0835629743426431
+ ],
+ "F11": 1.1,
+ "wall_seconds": 34.50825524330139
+}
