@@ -1,0 +1,7 @@
+#first two lines: model:---0)model num 1) E-modulus 2) Poisson-ratio 3) Gamma (mooney-rivlin only)
+1.0	10	0.496000	0	0.0	0.0	0.0	0.0	0.0
+1.0	100	0.3	0	0.0	0.0	0.0	0.0	0.0
+#charge dF (row-major F11 F12 F13 F21 F22 F23 F31 F32 F33)
+0.2	0	0	0	0	0	0	0	0
+#(Charge type) P-1 or F-0: 0 = control this component by Fij, 1 = control this component by average Pij
+0.0	0.0	0.0	0.0	1.0	0.0	0.0	0.0	1.0

@@ -1,0 +1,163 @@
+# =============================================================================
+# poisson_sweep.yaml - validate the mixed formulation against
+#
+#   M. Wang, K. Zhang, C. Chen, "A mixed FFT-Galerkin based approach for
+#   incompressible or slightly compressible hyperelastic solids under finite
+#   deformation", CMAME 396 (2022) 115092.
+#
+# One cell (the two-inclusion cell of the paper's Fig. 1), one load case
+# (uniaxial traction to F11 = 1.2, Eq. 61), nine Poisson's ratios. Both phases
+# share nu, so kappa/mu = 2(1+nu)/(3(1-2nu)) is the same in both and runs from
+# ~4.7 at nu = 0.4 to infinity at nu = 0.5.
+#
+# This reproduces the paper's Fig. 4 (P11 against nu, with nu = 0.5 solved by
+# the fully incompressible branch of the same formulation) and, over the wider
+# nu ladder, the iteration-count and kappa/mu panels of its Fig. 2. Fig. 2
+# itself is simple shear, which this solver cannot start: det(I + gamma*e21)
+# is exactly 1, so the first increment has a zero volumetric residual and the
+# Newton line search rejects every step. Uniaxial traction tests the same
+# thing - what the formulation does as nu -> 0.5 - without that degeneracy.
+#
+# Only the mixed deformation-pressure formulation is run: this repository has
+# no strain-based solver, so the paper's second curve has no counterpart here.
+#
+#   python FFT_simulation/poisson_sweep.py FFT_simulation/Run_configs/poisson_sweep.yaml
+#
+# The runner generates the cell .npz and the nine charge files if they do not
+# exist yet, runs every case, then writes poisson_sweep.csv and
+# poisson_sweep.png into experiment.output_root. To re-plot without re-solving:
+#
+#   python FFT_simulation/poisson_sweep.py FFT_simulation/Run_configs/poisson_sweep.yaml --collect
+#
+# Other useful flags: --dry-run, --poisson 0.499 0.5 (run part of the ladder),
+# --max-workers, --on-existing {skip,overwrite,error}, --terminal-output.
+# =============================================================================
+
+version: 1
+
+# Relative paths below are resolved against the repository root (the parent of
+# FFT_simulation/), not the working directory.
+base_path: .
+
+experiment:
+  name: poisson_sweep
+  output_root: Results/poisson_sweep
+
+run:
+  mode: cases
+
+execution:
+  # One worker only: at N=63 with gmres_restart 400 a single case needs ~9 GB
+  # (see solver.gmres_restart below), and this machine has 15.8 GB. Raising
+  # this without lowering gmres_restart will run the box out of memory.
+  max_workers: 1
+  log_to_file: true
+  on_existing: overwrite
+  save_resolved_config: true
+  thread_env:
+    OMP_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    MKL_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1
+    FFT_WORKERS: 1
+
+
+# --- the sweep ----------------------------------------------------------------
+poisson_sweep:
+  # Constitutive model number -> fg/constitutive_incompressible/<model>.py.
+  # 1.0 = Neo-Hookean (what the paper uses), 2.0 = Mooney-Rivlin.
+  model: 1.0
+
+  # Same 10x contrast as Tables 1-2 of the paper, but at this repository's own
+  # stress scale rather than the paper's 0.26 / 2.6 MPa. Absolute P values are
+  # therefore ~38x the paper's; the nu-to-nu *relative* comparisons (including
+  # the 0.499-vs-0.5 check below) are unaffected, since contrast and geometry
+  # still match.
+  soft_e: 10          # MPa, phase 0 (matrix)
+  hard_e: 100         # MPa, phase 1 (the two inclusions)
+  gamma: 0.0          # Mooney-Rivlin only; ignored by the Neo-Hookean model
+
+  # Both phases get this Poisson's ratio. 0.5 means fully incompressible
+  # (1/kappa = 0) - the fourth point of the paper's Fig. 4, solved by the
+  # incompressible branch of the same mixed formulation.
+  # Table 2 alone would be [0.49, 0.496, 0.499, 0.5]; the wider list below is
+  # Table 1 extended with that incompressible point.
+  poisson: [0.4, 0.42, 0.44, 0.46, 0.48, 0.49, 0.496, 0.499, 0.5]
+
+  # Uniaxial traction, Eq. (61): F11 is prescribed and the transverse faces are
+  # traction free (P22 = P33 = 0). `axis` picks the stretched direction; the
+  # collector reports the matching P component plus the two that must come out
+  # at zero.
+  axis: 1
+  stretch: 1.2        # prescribed F11 (the paper's value)
+
+  # The cell to solve. Written on first run from the `geometry` block below;
+  # an existing file is reused as-is (and checked against geometry.N).
+  structure: microstructure_generation/3D_samples/smaller_structures_v2/voxel_structures/phr_30.40_id23_voxel.npz
+
+  # Fig. 1 of the paper: the cube [-0.5, 0.5]^3 holding
+  #   sphere    (X1-0.1)^2 + X2^2 + (X3-0.1)^2 <= 0.35^2
+  #   ellipsoid (X1+0.2)^2 + X2^2/4 + (X3+0.2)^2 <= 0.2^2   (semi-axes .2 .4 .2)
+  # A voxel is hard when its center lies inside either one; this comes out at a
+  # 23.9% hard-phase volume fraction at N = 63.
+  geometry:
+    N: 31                                   # must equal defaults.solver.N
+
+  # Where the generated charge files go. Omit for FFT_simulation/Run_configs/Charges.
+  # charge_dir: FFT_simulation/Run_configs/Charges
+
+
+# --- defaults -----------------------------------------------------------------
+# Merged into all nine cases; only the charge file differs between them.
+defaults:
+
+  solver:
+    type: mixed
+    N: 31                     # must equal poisson_sweep.geometry.N
+
+    # The charge file's dF is the *whole* stretch (F11 = 1.2 -> dF11 = 0.2),
+    # and these increments are fractions of it, so they must sum to 1.0 for
+    # the run to end at F11 = 1.2. 4 x 0.25 of dF11 = strain steps of 0.05,
+    # with results written at F11 = 1.05, 1.10, 1.15, 1.20.
+    increments:
+      repeat: 4
+      value: 0.25
+
+    # Green-preconditioned GMRES. The paper used plain conjugate gradients;
+    # set this to `none` to count raw CG iterations instead (much slower, and
+    # near nu = 0.5 it may hit max_gmres_iter).
+    preconditioner: green
+    reference: matrix
+    discretization: fourier
+    precond_restrict: true
+
+    # The Krylov basis is the dominant memory cost: one vector is 20 MB at
+    # N=63, so 400 vectors is ~8 GB, and a worker needs ~9 GB with the tangent
+    # and Green-symbol fields on top. That is why max_workers is 1 above - on
+    # a 16 GB machine two of these do not fit. Drop to 100 (~3 GB/worker) if
+    # you would rather run 4 cases at once.
+    gmres_restart: 400
+    # scipy counts restart cycles, so this is ceil(5000/400) = 13 cycles,
+    # an effective cap of 5200 iterations per linear solve.
+    max_gmres_iter: 5000
+
+    tol_rel: 1.e-5
+    min_substep_ratio: 0.125
+
+    forcing: eisenstat_walker
+    eta_max: 1.e-2
+    eta_min: 1.e-3
+
+    diagnostics: false
+
+  phases:
+    matrix_phase: 0           # soft phase
+    filler_phase: 1           # hard inclusions
+    phase_key: phase
+
+  outputs:
+    save_plots: true
+    plot_dpi: 200
+    # Turn this on to compare the P11 field against the paper's Fig. 5.
+    save_fields: false
+    field_filename: fields.vti
